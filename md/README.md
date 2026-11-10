@@ -1,16 +1,24 @@
 # OPIc study pack — index
 
-Two independent sources, kept in separate markdown files:
+Two independent sources, kept in separate markdown files.
 
-## A. Video pack — shadowing
+## A. Video pack — shadowing (no timestamps)
 
 | File | Contents |
 |---|---|
-| `video-sentences.md` | The 100 shadowing sentences from `오픽 IH 만들어주는 문장 100개 [1시간 합본].webm`, once each, in video order — plain list + timestamp table |
-| `video_sentences.json` | Same data machine-readable: `no`, `en`, `ts`, `time`, `slide_label` |
+| `sentences-by-phrase.md` | Every video with its sentences grouped by the phrase the group practises (3–4 sentences per group) |
+| `sentences-plain.md` | The same sentences as a flat numbered list per video |
+
+The machine-readable version (groups, video ids, stable sentence ids) lives in the app bundle:
+`data/study-pack.json` → `videos[].groups[].items[]`.
 
 ## B. Site pack — OPIcGPT study room
 
-See `site-00-index.md`. Files: `site-01-question-bank.md`, `site-02-model-answers.md`, `site-03-expressions-by-topic.md`, `site-04-drafts-and-phrase-banks.md`, `site-05-survey-and-mock-exam.md`.
+See `site-00-index.md`. Files: `site-01-question-bank.md`, `site-02-model-answers.md`, 
+`site-03-expressions-by-topic.md`, `site-04-drafts-and-phrase-banks.md`, 
+`site-05-survey-and-mock-exam.md`.
 
-The video and the site share no content: the video is 100 memorised sentences for shadowing, the site is a question bank plus templates and vocabulary by topic.
+The video and the site share no content: the video is memorised sentences for shadowing, 
+the site is a question bank plus templates and vocabulary by topic.
+
+> Live app: https://geniuskpj.github.io/opic_study/
