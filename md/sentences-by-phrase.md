@@ -185,7 +185,7 @@ No timestamps: play the video and follow along.
 
 ## IH 필요하면 이 영상 무조건 따라하세요(🗣️ 섀도잉까지)
 
-`v01` · IH · 21 sentences · 5 groups
+`v01` · IH · 20 sentences · 5 groups
 
 ### look forward to
 
@@ -221,7 +221,6 @@ No timestamps: play the video and follow along.
 - I always go for a walk whenever I have free time.
 - I went for a walk last night with my wife and it was a great experience.
 - But now, I've realized that going for a walk is a nice way to spend free time.
-- What do you normally do when you go to coffee shop meetings or gatherings there? Tell me what you like to
 
 ## TV 보는 대신 계속 듣는 오픽 IM 문장 20개(🗣️ 셰도잉까지)
 

@@ -109,7 +109,7 @@ Same content as `sentences-by-phrase.md` without the group structure — for qui
 
 ## IH 필요하면 이 영상 무조건 따라하세요(🗣️ 섀도잉까지)
 
-`v01` · IH · 21 sentences
+`v01` · IH · 20 sentences
 
 1. I look forward to hanging out with my friends during my free time.
 2. I tend to look forward to the weekend when I'm at work.
@@ -131,7 +131,6 @@ Same content as `sentences-by-phrase.md` without the group structure — for qui
 18. I always go for a walk whenever I have free time.
 19. I went for a walk last night with my wife and it was a great experience.
 20. But now, I've realized that going for a walk is a nice way to spend free time.
-21. What do you normally do when you go to coffee shop meetings or gatherings there? Tell me what you like to
 
 ## TV 보는 대신 계속 듣는 오픽 IM 문장 20개(🗣️ 셰도잉까지)
 
