@@ -1,0 +1,17 @@
+{
+  "name": "opic-study-app",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static OPIc study app (Preact + esbuild, no Tailwind). Built output goes to ../app for GitHub Pages.",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "dependencies": {
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

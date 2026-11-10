@@ -1,0 +1,15 @@
+{
+  "name": "OPIc Study — 문장 · 표현 · 문제",
+  "short_name": "OPIc Study",
+  "description": "OPIc shadowing sentences, expression banks and 423 past questions. Data is downloaded once and cached in the browser.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1317",
+  "theme_color": "#101418",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

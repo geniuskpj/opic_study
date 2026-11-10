@@ -1,0 +1,13 @@
+{
+ "version": "9dd36a8564ca",
+ "size": 570391,
+ "counts": {
+  "sentences": 297,
+  "groups": 76,
+  "videos": 11,
+  "questions": 423,
+  "phrases_topics": 38,
+  "lexicon_topics": 50,
+  "expr_topics": 50
+ }
+}

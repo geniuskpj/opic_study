@@ -1,0 +1,5 @@
+node_modules/
+app-src/node_modules/
+md-src/
+package-lock.json
+*.log
