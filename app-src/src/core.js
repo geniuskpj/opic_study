@@ -25,6 +25,8 @@ export const idx = {
   questions: new Map(),   // id  -> question
   videoGroups: new Map(), // videoId -> [gid]
   videos: [],             // pack videos (with derived short labels)
+  rows: [],               // flat browse list (searchable): groups and single items
+  sources: [],            // [{id,label,count}]
   topicGroups: new Map(), // OPIc topic -> [group]
   topicList: [],          // topics ordered by how many groups they hold
   topics: [],             // expression topics
@@ -80,8 +82,73 @@ function buildIndex(pack) {
     });
     idx.videoGroups.set(v.id, glist);
   }
+  /* ---- extra sources: 강지완 material. Each becomes study units so the same session screen works. */
+  const K = pack.kang || {};
+  const addGroup = (gid, phrase, topic, source, items, extra) => {
+    const rec = { gid, videoId: null, video: null, videos: [], phrase, topic, source, items,
+      count: items.length, ...(extra || {}) };
+    idx.groups.set(gid, rec);
+    idx.allGroups.push(rec);
+    items.forEach((it, i) => { it.sid = it.sid || 's' + hash32(it.en); it.gi = i; });
+    return rec;
+  };
+  const chunk = (items, size) => {
+    const out = [];
+    for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+    return out;
+  };
+
+  if (K.k2 && K.k2.items) {
+    chunk(K.k2.items, 10).forEach((part, ci) => {
+      const items = part.map((it) => ({ en: it.en, kr: it.kr || null, sid: 's' + hash32(it.en) }));
+      addGroup('g' + hash32('k2#' + ci), `만능문장 ${ci * 10 + 1}–${ci * 10 + items.length}`, '만능문장',
+        '만능문장 150', items);
+    });
+  }
+  if (K.k1 && K.k1.items) {
+    chunk(K.k1.items, 5).forEach((part, ci) => {
+      const items = part.map((it) => ({ en: it.en, kr: it.kr || null, sub: it.topic || null,
+        sid: 's' + hash32(it.en) }));
+      addGroup('g' + hash32('k1#' + ci), `기출 답변 ${ci * 5 + 1}–${ci * 5 + items.length}`, '기출 답변',
+        '기출 답변 101', items);
+    });
+  }
+  if (K.k3 && K.k3.items) {
+    K.k3.items.forEach((it) => {
+      const items = [{ en: (it.template || '').replace(/\[~\]/g, '…'), sub: '패턴', sid: 's' + hash32(it.template + '#t') }];
+      (it.examples || []).forEach((ex) => items.push({ en: ex.en, sub: ex.slot, sid: 's' + hash32(ex.en) }));
+      addGroup('g' + hash32('k3#' + it.no), it.template || `패턴 ${it.no}`,
+        (it.category || '만능패턴').split(' - ')[0].trim(), '만능패턴 72', items,
+        { templateKr: it.templateKr || null, label: `만능패턴 ${it.no}` });
+    });
+  }
+
+  /* ---- flat browse rows (one per study unit, or per item for the long sentence sets) */
+  idx.rows = [];
+  const pushRow = (r) => { idx.rows.push(r); };
   for (const g of idx.allGroups) {
-    if (!g.topic) continue;
+    if (g.source === '만능문장 150' || g.source === '기출 답변 101') {
+      g.items.forEach((it, i) => pushRow({
+        kind: 'item', gid: g.gid, i, src: g.source,
+        title: it.en, sub: it.kr || it.sub || '', topic: g.topic,
+        hay: [it.en, it.kr, g.topic, g.source].join(' ').toLowerCase(),
+      }));
+    } else {
+      pushRow({
+        kind: 'group', gid: g.gid, src: g.source || '쉐도잉', title: g.phrase,
+        sub: [g.topic, g.video ? g.video.short : null, `${g.count}문장`].filter(Boolean).join(' · '),
+        topic: g.topic, count: g.count, videoId: g.videoId,
+        hay: [g.phrase, g.topic, g.video ? g.video.short + ' ' + g.video.title : '', g.source,
+          ...g.items.map((x) => x.en + ' ' + (x.kr || ''))].join(' ').toLowerCase(),
+      });
+    }
+  }
+  const srcCount = new Map();
+  for (const r of idx.rows) srcCount.set(r.src, (srcCount.get(r.src) || 0) + 1);
+  idx.sources = [...srcCount.entries()].map(([label, count]) => ({ label, count }));
+
+  for (const g of idx.allGroups) {
+    if (!g.topic || g.source) continue;
     if (!idx.topicGroups.has(g.topic)) idx.topicGroups.set(g.topic, []);
     idx.topicGroups.get(g.topic).push(g);
   }

@@ -10,9 +10,9 @@ questions from a Korean OPIc practice site — packaged as one static app that w
 | Tab | Content |
 |---|---|
 | 홈 | continue where you stopped, groups due for review, today's count, shortcuts |
-| 쉐도잉 | 296 sentences from 11 videos as 59 phrase groups — browse **by video** or **by OPIc topic** (13 topics), filter unfinished / starred |
-| 문제 | 423 past questions (background survey / unexpected topic / role-play), 94 with model answers, filters by type and topic |
-| 자료 | 50 topics of expressions, answer templates, and 10 markdown documents (including the phrases grouped by OPIc topic) |
+| 문장 | **one searchable list of all 365 items** — 59 shadowing phrase groups (296 sentences), 151 선택주제 sentences, 72 master patterns, 83 model answers; filter by source and by OPIc topic (13) |
+| 문제 | 423 past questions (94 with model answers) + **7 video mock exams (98 spoken questions, transcribed)** + the book's 34 exam sets |
+| 자료 | 50 topics of expressions, answer templates, and 12 markdown documents |
 | ★ 저장 | starred sentences, questions and expressions (Settings exports/imports them) |
 
 The core screen is the **shadowing session**: one phrase group at a time, the sentences stacked
@@ -64,7 +64,13 @@ npm run build      # writes ../app/assets/js/app.{js,css} and ../app/data/docs.j
    code — the phrase's key word must really appear in at least 75% of the group's sentences.
 3b. Every group was then filed under one of the site's own OPIc topics (여가시간, 교통수단, 재활용,
    카페가기, 기술 …) so the sentences, the questions and the expression lists can be browsed with
-   the same vocabulary. `work/group_topics.json` holds the mapping.
+   the same vocabulary.
+4. The seven 실전 모의고사 videos only show "Question N of 15" — the interviewer's questions exist
+   in the audio alone, so each exam's audio was chunked and transcribed (Korean commentary ignored),
+   giving 14 questions per exam (question 1, the self-introduction, is skipped in every video).
+5. Three 강지완 오픽TV videos have a different slide format each (Q&A answers, 150 numbered 선택주제
+   sentences with translations, 72 master patterns with slots), so each was OCR'd with its own
+   prompt and de-duplicated by text; gaps were re-sampled more densely and merged.
 4. The site data came from its own JSON/JS files, dumped verbatim, then rendered into markdown and
    into the app bundle. Sentences re-used across videos collapse into one study unit with several
    source videos.

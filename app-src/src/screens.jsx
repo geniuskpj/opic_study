@@ -2,7 +2,7 @@
 import { h } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import {
-  PACK, idx, progress, store, tts, stars, sentId, exprId, SITE, search, topicLabel,
+  PACK, idx, progress, store, tts, stars, sentId, exprId, SITE, search, topicLabel, hash32,
 } from './core.js';
 import { go, useStore } from './router.js';
 import {
@@ -76,9 +76,9 @@ export function Home({ openSearch, openSettings, toast }) {
       h('div', { class: 'section' },
         h('div', { class: 'section-head' }, h('h2', null, '바로가기')),
         h('div', { class: 'list' },
-          rowItem('쉐도잉 문장', `${counts.total}개 그룹 · ${idx.sentences.size}문장`, () => go('/shadow')),
+          rowItem('문장 · 패턴 전체', `${idx.rows.length}개 항목 검색 · 쉐도잉 ${idx.allGroups.filter(g => !g.source).length}그룹`, () => go('/shadow')),
           rowItem('기출 문제', `${PACK.questions.length}개 · 답변 ${PACK.questions.filter((q) => q.ans).length}개`, () => go('/questions')),
-          rowItem('모의고사', '34개 세트 · 40분', () => go('/exam')),
+          rowItem('모의고사', `영상 ${(PACK.mockExams || []).length}개 + 문제집 34세트`, () => go('/exam')),
           rowItem('주제별 문장', `OPIc 주제 ${idx.topicList.length}개로 모아 보기`, () => go('/topics')),
           rowItem('주제별 표현', `표현 자료 ${idx.topics.length}개 주제`, () => go('/lib/expr')),
           rowItem('저장한 문장 · 문제', `${stars.count('sent')}문장 · ${stars.count('q')}문제`, () => go('/saved')))),
@@ -92,38 +92,68 @@ export function Home({ openSearch, openSettings, toast }) {
   }
 }
 
-/* ------------------------------------------------------------------ shadow browse */
-export function ShadowList() {
+/* ------------------------------------------------------------------ browse (one searchable list) */
+export function Browse({ openSearch }) {
   const st = useStore();
+  const [q, setQ] = useState('');
+  const [src, setSrc] = useState('전체');
+  const [topic, setTopic] = useState('전체');
+  const [limit, setLimit] = useState(80);
+
+  const topics = useMemo(() => ['전체', ...idx.topicList.map((t) => t.topic)], []);
+  const tokens = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const rows = useMemo(() => idx.rows.filter((r) => {
+    if (src !== '전체' && r.src !== src) return false;
+    if (topic !== '전체' && r.topic !== topic) return false;
+    return tokens.every((t) => r.hay.includes(t));
+  }), [src, topic, q]);
+
   const counts = progress.counts();
   return h('div', null,
-    h(AppBar, { title: '쉐도잉', sub: `${idx.allGroups.length}개 그룹 · ${idx.sentences.size}문장 · 완료 ${counts.done}` }),
+    h(AppBar, {
+      title: '문장', sub: `${rows.length}개 표시 · 전체 ${idx.rows.length}개 · 완료 ${counts.done}그룹`,
+      right: h(IconBtn, { icon: IconSearch, label: '검색', onClick: openSearch }),
+    }),
     h('div', { class: 'screen' },
-      h(Seg, {
-        full: true, value: 'video',
-        options: [{ value: 'video', label: `영상별 ${PACK.videos.length}` }, { value: 'topic', label: `OPIc 주제별 ${idx.topicList.length}` }],
-        onChange: (v) => { if (v === 'topic') go('/topics'); },
+      h(SearchField, {
+        value: q, placeholder: '문장 · 구 · 주제 검색 (영어/한국어)',
+        onInput: (v) => { setQ(v); setLimit(80); },
       }),
-      h('p', { class: 't-s dim mt4' }, '그룹마다 3–4문장이 같은 구(phrase)를 반복합니다. 한 그룹씩 따라 말해 보세요.'),
-      h('div', { class: 'stack mt4' }, PACK.videos.map((v) => {
-        const total = v.groups.length;
-        const done = progress.videoDone(v.id);
-        const next = progress.nextGroup(v.id);
-        return h('div', { class: 'card tight' },
-          h('div', { class: 'row' },
-            h(Ring, { value: total ? done / total : 0, size: 44, done: done === total }),
-            h('button', {
-              class: 'grow col', style: 'background:none;border:0;text-align:left;color:inherit;padding:0;cursor:pointer',
-              onClick: () => go(`/v/${v.id}`),
-            },
-              h('div', { class: 't-ts nowrap' }, v.short),
-              h('div', { class: 't-cap dim3 nowrap' }, v.desc),
-              h('div', { class: 'row', style: 'gap:6px;margin-top:4px' },
-                v.level ? h('span', { class: `badge ${v.level.toLowerCase()}` }, v.level) : null,
-                h('span', { class: 'badge' }, `${v.count}문장`),
-                h('span', { class: 'badge' }, `${total}그룹`))),
-            h(IconBtn, { icon: IconPlay, label: '이어서', variant: 'bordered', onClick: () => next && go(`/s/${next}?from=${v.id}`) })));
-      }))));
+      h('div', { class: 'chiprow mt3' },
+        h(Chip, { on: src === '전체', onClick: () => { setSrc('전체'); setLimit(80); } }, `전체 ${idx.rows.length}`),
+        idx.sources.map((x) => h(Chip, {
+          key: x.label, on: src === x.label, onClick: () => { setSrc(x.label); setLimit(80); },
+        }, `${x.label} ${x.count}`))),
+      (src === '전체' || src === '쉐도잉') ? h('div', { class: 'chiprow mt2' },
+        topics.slice(0, 14).map((t) => h(Chip, {
+          key: t, tiny: true, on: topic === t, onClick: () => { setTopic(t); setLimit(80); },
+        }, t))) : null,
+      h('div', { class: 'list mt4' }, rows.slice(0, limit).map((r) => {
+        const pr = r.kind === 'group' ? progress.get(r.gid) : null;
+        const sid = 's' + hash32(r.title);
+        const href = `/s/${r.gid}${r.kind === 'item' ? `?i=${r.i}` : ''}`;
+        return h('div', { key: r.gid + ':' + (r.i == null ? 'g' : r.i), class: 'rowitem' },
+          pr ? h('span', { class: `dot ${pr.state === 'done' ? 'done' : pr.state === 'doing' ? '' : 'muted'}` }) : null,
+          h('button', {
+            class: 'grow col',
+            style: 'background:none;border:0;text-align:left;color:inherit;padding:0;cursor:pointer;min-width:0',
+            onClick: () => go(href),
+          },
+            h('div', { class: 'rt en' }, r.title.length > 90 ? r.title.slice(0, 88) + '…' : r.title),
+            r.sub ? h('div', { class: 'rs nowrap' }, r.sub) : null,
+            h('div', { class: 'rs dim3', style: 'font-size:12px' }, r.src)),
+          h(IconBtn, { icon: IconPlay, label: '듣기', sm: true, onClick: () => tts.speak(r.title, { rate: st.settings.rate }) }),
+          h(IconBtn, {
+            icon: stars.has('sent', sid) ? IconStarFill : IconStar, label: '별표', sm: true,
+            on: stars.has('sent', sid), onClick: () => stars.toggle('sent', sid),
+          }),
+          h(IconBtn, { icon: IconChevR, label: '열기', sm: true, onClick: () => go(href) }));
+      }), rows.length ? null : h(Empty, { title: '검색 결과가 없습니다', hint: '영어 문장이나 한국어 뜻으로 찾아보세요.' })),
+      rows.length > limit ? h('div', { class: 'mt4' },
+        h(Btn, { wide: true, onClick: () => setLimit(limit + 120) }, `더 보기 (${rows.length - limit}개 남음)`)) : null),
+    h('div', { class: 'screen', style: 'padding-top:0' },
+      h('p', { class: 't-cap dim3' },
+        '쉐도잉 = 영상 속 구(phrase) 그룹 · 만능문장 = 선택주제 150문장 · 만능패턴 = 72개 패턴 · 기출 답변 = 오픽 101 모범 답변')));
 }
 
 export function TopicList() {
@@ -368,14 +398,27 @@ export function QuestionDetail({ id, toast }) {
 export function ExamList() {
   const sets = PACK.exam.comboCatalog || [];
   const mi = PACK.exam.mockIntro;
+  const vids = PACK.mockExams || [];
   return h('div', null,
-    h(AppBar, { back: true, title: '모의고사', sub: `${sets.length}개 세트 · 실제 시험 흐름` }),
+    h(AppBar, { back: true, title: '모의고사', sub: `영상 ${vids.length}개 · 문제집 ${sets.length}세트` }),
     h('div', { class: 'screen' },
+      vids.length ? h('div', { class: 'section' },
+        h('div', { class: 'section-head' }, h('h2', null, '영상 모의고사'),
+          h('span', { class: 't-cap dim3' }, `${vids.length}개 · 각 14문항`)),
+        h('div', { class: 'list' }, vids.map((e) => h('button', {
+          key: e.id, class: 'rowitem', onClick: () => go(`/exam/${e.id}`),
+        },
+          h('span', { class: 'badge' }, e.id.toUpperCase()),
+          h('div', { class: 'grow' },
+            h('div', { class: 'rt' }, e.title),
+            h('div', { class: 'rs' }, `${e.note} · ${e.minutes}분 · ${e.questions.length}문항`)),
+          h(IconChevR, { size: 18 }))))) : null,
       mi ? h('div', { class: 'card' },
         h('div', { class: 't-cap dim' }, '시작 질문'),
         h('div', { class: 't-ts en mt1' }, mi.en),
         h('div', { class: 't-s dim ko' }, mi.kr)) : null,
-      h('div', { class: 'list mt4' }, sets.map((row, i) => {
+      h('div', { class: 'section-head mt6' }, h('h2', null, '문제집 세트')),
+      h('div', { class: 'list' }, sets.map((row, i) => {
         const first = idx.questions.get(Array.isArray(row[0]) ? row[0][0] : row[0]);
         return h('button', { key: i, class: 'rowitem', onClick: () => go(`/exam/${i}`) },
           h('span', { class: 'badge num' }, `${i + 1}`),
@@ -387,6 +430,8 @@ export function ExamList() {
 }
 
 export function ExamRun({ index }) {
+  const vid = (PACK.mockExams || []).find((e) => e.id === index);
+  if (vid) return h(VideoExam, { exam: vid });
   const row = (PACK.exam.comboCatalog || [])[index] || [];
   const [step, setStep] = useState(0);
   const [left, setLeft] = useState(40 * 60);
@@ -438,6 +483,42 @@ export function ExamRun({ index }) {
           variant: 'primary', wide: true,
           onClick: () => (step + 1 < row.length ? setStep(step + 1) : setRun(false)),
         }, step + 1 < row.length ? '다음 단계 →' : '종료'))));
+}
+
+function VideoExam({ exam }) {
+  const st = useStore();
+  const [step, setStep] = useState(0);
+  const q = exam.questions[step] || {};
+  return h('div', null,
+    h(AppBar, {
+      back: true, title: exam.title, sub: `${step + 1} / ${exam.questions.length} · ${exam.note}`,
+      right: h(IconBtn, { icon: IconList, label: '전체 보기', onClick: () => go('/exam') }),
+    }),
+    h('div', { class: 'screen' },
+      h('div', { class: 'card' },
+        h('div', { class: 't-cap dim' }, `Question ${step + 1} of ${exam.questions.length}`),
+        h('h1', { class: 't-title en mt2' }, q.en || ''),
+        q.kr ? h('p', { class: 't-s dim ko mt2' }, q.kr) : null,
+        h('div', { class: 'row mt3' },
+          h(IconBtn, {
+            icon: IconPlay, label: '질문 듣기', variant: 'bordered',
+            onClick: () => tts.speak(q.en, { rate: st.settings.rate, voiceName: st.settings.voice }),
+          }),
+          h('span', { class: 't-cap dim3' }, '질문 듣기'),
+          q.topic ? h('span', { class: 'badge' }, q.topic) : null,
+          q.qid != null ? h(Btn, { onClick: () => go(`/q/${q.qid}`) }, '문제집에서 보기') : null)),
+      h('div', { class: 'row mt4', style: 'gap:8px' },
+        h(Btn, { wide: true, onClick: () => setStep(Math.max(0, step - 1)) }, '← 이전'),
+        h(Btn, {
+          variant: 'primary', wide: true,
+          onClick: () => setStep(Math.min(exam.questions.length - 1, step + 1)),
+        }, '다음 →')),
+      h('div', { class: 'list mt5' }, exam.questions.map((qq, i) => h('button', {
+        key: i, class: 'rowitem', onClick: () => setStep(i),
+      },
+        h('span', { class: `dot ${i < step ? 'done' : i === step ? '' : 'muted'}` }),
+        h('div', { class: 'grow' }, h('div', { class: 'rt en nowrap' }, qq.en)),
+        h('span', { class: 't-cap dim3 num' }, `${i + 1}`))))));
 }
 
 /* ------------------------------------------------------------------ library */

@@ -1,8 +1,12 @@
 {
- "version": "497cc3636def",
- "size": 571892,
+ "version": "2934de17642d",
+ "size": 697759,
  "counts": {
   "sentences": 296,
+  "kang_answers": 83,
+  "kang_sentences": 151,
+  "kang_patterns": 72,
+  "mock_exam_questions": 98,
   "groups": 76,
   "videos": 11,
   "questions": 423,

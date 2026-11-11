@@ -26,7 +26,7 @@ function buildQueue(gid, from) {
   return all.map((g) => g.gid);
 }
 
-export function Session({ gid, from, toast }) {
+export function Session({ gid, from, at, toast }) {
   const st = useStore();
   const queue = useMemo(() => buildQueue(gid, from), [gid, from]);
   const [cur, setCur] = useState(gid);
@@ -63,6 +63,12 @@ export function Session({ gid, from, toast }) {
   useEffect(() => {
     if (gid && gid !== cur && idx.groups.has(gid)) { setCur(gid); setSi(0); }
   }, [gid]);
+  /* ?i=<n> starts the session on a specific sentence of the unit (used by the browse list) */
+  useEffect(() => {
+    const n = Number(at);
+    const g = idx.groups.get(gid);
+    if (g && Number.isFinite(n) && n >= 0 && n < g.items.length) setSi(n);
+  }, [gid, at]);
 
   /* stop speech on route/group change and on unmount */
   useEffect(() => { setSi(0); setPhase('idle'); setRevealed(new Set()); tts.stop(); }, [cur]);
@@ -186,7 +192,10 @@ export function Session({ gid, from, toast }) {
               setSi(i); if (auto || isCur) play(i);
             },
           },
-            h('span', { class: 'txt en' }, stripMark(it.en, group.phrase).map((p, k) => p.hit ? h('mark', { key: k }, p.t) : p.t)),
+            h('span', { class: 'txt en' },
+              it.sub && isCur ? h('span', { class: 'badge', style: 'margin-right:6px' }, it.sub) : null,
+              stripMark(it.en, group.phrase).map((p, k) => p.hit ? h('mark', { key: k }, p.t) : p.t),
+              it.kr && isCur ? h('span', { class: 'kr ko' }, it.kr) : null),
             isCur && phase === 'gap' ? h('i', { class: 'gapprog', style: `width:${Math.round(gapPct * 100)}%` }) : null);
         })),
 

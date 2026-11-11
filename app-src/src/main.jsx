@@ -7,7 +7,7 @@ import {
 import {
   IconHome, IconWave, IconQuiz, IconBook, IconSearch, IconGear, IconClose, Sheet, Seg, Btn, IconBtn, Toast, useToast,
 } from './ui.jsx';
-import { Home, ShadowList, VideoDetail, TopicList, TopicGroups, Questions, QuestionDetail, ExamList, ExamRun, Library, DocReader, Saved } from './screens.jsx';
+import { Home, Browse, VideoDetail, TopicList, TopicGroups, Questions, QuestionDetail, ExamList, ExamRun, Library, DocReader, Saved } from './screens.jsx';
 import { Session } from './session.jsx';
 import { go, useRoute, useStore, applyTheme } from './router.js';
 
@@ -159,15 +159,15 @@ function App() {
       case 'home': return h(Home, {
         toast, openSearch: () => setSearch(true), openSettings: () => setSettings(true),
       });
-      case 'shadow': return h(ShadowList, {});
+      case 'shadow': return h(Browse, { openSearch: () => setSearch(true) });
       case 'video': return h(VideoDetail, { id: route.arg });
       case 'topics': return h(TopicList, {});
       case 'topic': return h(TopicGroups, { name: route.arg });
-      case 'session': return h(Session, { gid: route.arg, from: route.query.from, toast });
+      case 'session': return h(Session, { gid: route.arg, from: route.query.from, at: route.query.i, toast });
       case 'questions': return h(Questions, { openSearch: () => setSearch(true) });
       case 'question': return h(QuestionDetail, { id: Number(route.arg), toast });
       case 'exam': return h(ExamList, {});
-      case 'examRun': return h(ExamRun, { index: Number(route.arg) });
+      case 'examRun': return h(ExamRun, { index: /^m\d+$/.test(route.arg) ? route.arg : Number(route.arg) });
       case 'library': return h(Library, { seg: route.arg, topic: route.query.topic, openSearch: () => setSearch(true) });
       case 'doc': return h(DocReader, { file: route.arg });
       case 'saved': return h(Saved, { toast });
