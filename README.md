@@ -10,9 +10,9 @@ questions from a Korean OPIc practice site — packaged as one static app that w
 | Tab | Content |
 |---|---|
 | 홈 | continue where you stopped, groups due for review, today's count, shortcuts |
-| 쉐도잉 | 297 sentences from 11 videos as 59 phrase groups — browse by video, filter unfinished / starred |
+| 쉐도잉 | 296 sentences from 11 videos as 59 phrase groups — browse **by video** or **by OPIc topic** (13 topics), filter unfinished / starred |
 | 문제 | 423 past questions (background survey / unexpected topic / role-play), 94 with model answers, filters by type and topic |
-| 자료 | 50 topics of expressions, answer templates, and 10 markdown documents |
+| 자료 | 50 topics of expressions, answer templates, and 10 markdown documents (including the phrases grouped by OPIc topic) |
 | ★ 저장 | starred sentences, questions and expressions (Settings exports/imports them) |
 
 The core screen is the **shadowing session**: one phrase group at a time, the sentences stacked
@@ -62,6 +62,9 @@ npm run build      # writes ../app/assets/js/app.{js,css} and ../app/data/docs.j
    dropped non-sentence rows (menu boards, keyboard mash, promo hooks) and repaired truncated text.
 3. Sentences were grouped by the phrase they share (3–4 per group); the grouping was verified in
    code — the phrase's key word must really appear in at least 75% of the group's sentences.
+3b. Every group was then filed under one of the site's own OPIc topics (여가시간, 교통수단, 재활용,
+   카페가기, 기술 …) so the sentences, the questions and the expression lists can be browsed with
+   the same vocabulary. `work/group_topics.json` holds the mapping.
 4. The site data came from its own JSON/JS files, dumped verbatim, then rendered into markdown and
    into the app bundle. Sentences re-used across videos collapse into one study unit with several
    source videos.

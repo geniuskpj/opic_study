@@ -79,7 +79,8 @@ export function Home({ openSearch, openSettings, toast }) {
           rowItem('쉐도잉 문장', `${counts.total}개 그룹 · ${idx.sentences.size}문장`, () => go('/shadow')),
           rowItem('기출 문제', `${PACK.questions.length}개 · 답변 ${PACK.questions.filter((q) => q.ans).length}개`, () => go('/questions')),
           rowItem('모의고사', '34개 세트 · 40분', () => go('/exam')),
-          rowItem('주제별 표현', `${idx.topics.length}개 주제`, () => go('/lib/expr')),
+          rowItem('주제별 문장', `OPIc 주제 ${idx.topicList.length}개로 모아 보기`, () => go('/topics')),
+          rowItem('주제별 표현', `표현 자료 ${idx.topics.length}개 주제`, () => go('/lib/expr')),
           rowItem('저장한 문장 · 문제', `${stars.count('sent')}문장 · ${stars.count('q')}문제`, () => go('/saved')))),
       h('p', { class: 't-cap dim3 mt5' },
         '문장 자료: 오픽노잼 섀도잉 영상 · 문제/표현: 오픽GPT 학습실. 개인 학습용으로 정리한 페이지입니다.')));
@@ -98,7 +99,12 @@ export function ShadowList() {
   return h('div', null,
     h(AppBar, { title: '쉐도잉', sub: `${idx.allGroups.length}개 그룹 · ${idx.sentences.size}문장 · 완료 ${counts.done}` }),
     h('div', { class: 'screen' },
-      h('p', { class: 't-s dim' }, '그룹마다 3–4문장이 같은 구(phrase)를 반복합니다. 한 그룹씩 따라 말해 보세요.'),
+      h(Seg, {
+        full: true, value: 'video',
+        options: [{ value: 'video', label: `영상별 ${PACK.videos.length}` }, { value: 'topic', label: `OPIc 주제별 ${idx.topicList.length}` }],
+        onChange: (v) => { if (v === 'topic') go('/topics'); },
+      }),
+      h('p', { class: 't-s dim mt4' }, '그룹마다 3–4문장이 같은 구(phrase)를 반복합니다. 한 그룹씩 따라 말해 보세요.'),
       h('div', { class: 'stack mt4' }, PACK.videos.map((v) => {
         const total = v.groups.length;
         const done = progress.videoDone(v.id);
@@ -118,6 +124,57 @@ export function ShadowList() {
                 h('span', { class: 'badge' }, `${total}그룹`))),
             h(IconBtn, { icon: IconPlay, label: '이어서', variant: 'bordered', onClick: () => next && go(`/s/${next}?from=${v.id}`) })));
       }))));
+}
+
+export function TopicList() {
+  const st = useStore();
+  const total = idx.topicList.reduce((a, t) => a + t.groups.length, 0);
+  return h('div', null,
+    h(AppBar, { back: true, title: 'OPIc 주제별 문장', sub: `${idx.topicList.length}개 주제 · ${total}개 그룹` }),
+    h('div', { class: 'screen' },
+      h(Seg, {
+        full: true, value: 'topic',
+        options: [{ value: 'video', label: '영상별' }, { value: 'topic', label: 'OPIc 주제별' }],
+        onChange: (v) => { if (v === 'video') go('/shadow'); },
+      }),
+      h('p', { class: 't-s dim mt4' }, '기출 문제와 표현 자료에서 쓰는 것과 같은 주제 이름입니다. 시험에 나오는 주제부터 연습해 보세요.'),
+      h('div', { class: 'list mt4' }, idx.topicList.map(({ topic, groups }) => {
+        const done = groups.filter((g) => progress.get(g.gid).state === 'done').length;
+        return h('button', { key: topic, class: 'rowitem', onClick: () => go(`/topic/${encodeURIComponent(topic)}`) },
+          h(Ring, { value: groups.length ? done / groups.length : 0, size: 34, stroke: 3, label: false,
+            done: done === groups.length }),
+          h('div', { class: 'grow' },
+            h('div', { class: 'rt' }, topic),
+            h('div', { class: 'rs' }, `${groups.length}개 그룹 · ${groups.reduce((a, g) => a + g.count, 0)}문장`)),
+          h(IconChevR, { size: 18 }));
+      }))));
+}
+
+export function TopicGroups({ name }) {
+  const st = useStore();
+  const groups = idx.topicGroups.get(name) || [];
+  const done = groups.filter((g) => progress.get(g.gid).state === 'done').length;
+  return h('div', null,
+    h(AppBar, {
+      back: true, title: name, sub: `${groups.length}개 그룹 · 완료 ${done}`,
+      right: h(IconPlay, {
+        size: 22, style: 'cursor:pointer;color:var(--accent)',
+        onClick: () => {
+          const next = groups.find((g) => progress.get(g.gid).state !== 'done') || groups[0];
+          if (next) go(`/s/${next.gid}?from=${next.videoId}`);
+        },
+      }),
+    }),
+    h('div', { class: 'screen' },
+      h('div', { class: 'list' }, groups.map((g) => {
+        const p = progress.get(g.gid);
+        return h('button', { key: g.gid + g.videoId, class: 'rowitem', onClick: () => go(`/s/${g.gid}?from=${g.videoId}`) },
+          h('span', { class: `dot ${p.state === 'done' ? 'done' : p.state === 'doing' ? '' : 'muted'}` }),
+          h('div', { class: 'grow' },
+            h('div', { class: 'rt en' }, g.phrase),
+            h('div', { class: 'rs' }, `${g.video.short} · ${g.count}문장${g.videos.length > 1 ? ` · ${g.videos.length}개 영상` : ''}`)),
+          h(IconChevR, { size: 18 }));
+      }), groups.length ? null : h(Empty, { title: '이 주제에는 그룹이 없습니다' }))));
 }
 
 export function VideoDetail({ id }) {
@@ -149,7 +206,7 @@ export function VideoDetail({ id }) {
           h('span', { class: `dot ${p.state === 'done' ? 'done' : p.state === 'doing' ? '' : 'muted'}` }),
           h('div', { class: 'grow' },
             h('div', { class: 'rt en' }, g.phrase),
-            h('div', { class: 'rs' }, `${g.count}문장${p.passes ? ` · ${p.passes}회` : ''}${p.state === 'done' ? ' · 완료' : ''}`)),
+            h('div', { class: 'rs' }, `${g.topic ? g.topic + ' · ' : ''}${g.count}문장${p.passes ? ` · ${p.passes}회` : ''}${p.state === 'done' ? ' · 완료' : ''}`)),
           h(IconChevR, { size: 18 }));
       }), list.length ? null : h(Empty, { title: '해당하는 그룹이 없습니다' }))));
 }

@@ -7,7 +7,7 @@ import {
 import {
   IconHome, IconWave, IconQuiz, IconBook, IconSearch, IconGear, IconClose, Sheet, Seg, Btn, IconBtn, Toast, useToast,
 } from './ui.jsx';
-import { Home, ShadowList, VideoDetail, Questions, QuestionDetail, ExamList, ExamRun, Library, DocReader, Saved } from './screens.jsx';
+import { Home, ShadowList, VideoDetail, TopicList, TopicGroups, Questions, QuestionDetail, ExamList, ExamRun, Library, DocReader, Saved } from './screens.jsx';
 import { Session } from './session.jsx';
 import { go, useRoute, useStore, applyTheme } from './router.js';
 
@@ -18,7 +18,7 @@ const NAV = [
   { id: 'questions', label: '문제', icon: IconQuiz },
   { id: 'library', label: '자료', icon: IconBook },
 ];
-const navFor = (n) => (n === 'video' || n === 'session' ? 'shadow'
+const navFor = (n) => (n === 'video' || n === 'session' || n === 'topics' || n === 'topic' ? 'shadow'
   : n === 'question' || n === 'exam' || n === 'examRun' ? 'questions'
     : n === 'doc' ? 'library' : n);
 
@@ -161,6 +161,8 @@ function App() {
       });
       case 'shadow': return h(ShadowList, {});
       case 'video': return h(VideoDetail, { id: route.arg });
+      case 'topics': return h(TopicList, {});
+      case 'topic': return h(TopicGroups, { name: route.arg });
       case 'session': return h(Session, { gid: route.arg, from: route.query.from, toast });
       case 'questions': return h(Questions, { openSearch: () => setSearch(true) });
       case 'question': return h(QuestionDetail, { id: Number(route.arg), toast });

@@ -8,6 +8,7 @@ Two independent sources, kept in separate markdown files.
 |---|---|
 | `sentences-by-phrase.md` | Every video with its sentences grouped by the phrase the group practises (3–4 sentences per group) |
 | `sentences-plain.md` | The same sentences as a flat numbered list per video |
+| `phrases-by-topic.md` | The 76 phrase groups gathered under their OPIc topic (여가시간, 교통수단, 재활용 …) |
 
 The machine-readable version (groups, video ids, stable sentence ids) lives in the app bundle:
 `data/study-pack.json` → `videos[].groups[].items[]`.

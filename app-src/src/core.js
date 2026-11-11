@@ -25,6 +25,8 @@ export const idx = {
   questions: new Map(),   // id  -> question
   videoGroups: new Map(), // videoId -> [gid]
   videos: [],             // pack videos (with derived short labels)
+  topicGroups: new Map(), // OPIc topic -> [group]
+  topicList: [],          // topics ordered by how many groups they hold
   topics: [],             // expression topics
   allGroups: [],
 };
@@ -62,13 +64,14 @@ function buildIndex(pack) {
     const glist = [];
     v.groups.forEach((g, gi) => {
       const items = g.items.map((it) => ({ ...it, sid: sentId(it.en), en: it.en }));
+      const topic = g.topic || '';
       const gid = groupId(g.phrase, items[0].en);
       const existing = idx.groups.get(gid);
       if (existing) {
         /* the same sentences appear in more than one video: one study unit, several sources */
         if (!existing.videos.includes(v.id)) existing.videos.push(v.id);
       } else {
-        const rec = { gid, videoId: v.id, video: v, videos: [v.id], gi, phrase: g.phrase, items, count: items.length };
+        const rec = { gid, videoId: v.id, video: v, videos: [v.id], gi, phrase: g.phrase, topic, items, count: items.length };
         idx.groups.set(gid, rec);
         idx.allGroups.push(rec);
         for (const it of items) idx.sentences.set(it.sid, { sid: it.sid, en: it.en, gid, group: rec });
@@ -77,6 +80,14 @@ function buildIndex(pack) {
     });
     idx.videoGroups.set(v.id, glist);
   }
+  for (const g of idx.allGroups) {
+    if (!g.topic) continue;
+    if (!idx.topicGroups.has(g.topic)) idx.topicGroups.set(g.topic, []);
+    idx.topicGroups.get(g.topic).push(g);
+  }
+  idx.topicList = [...idx.topicGroups.entries()]
+    .map(([topic, groups]) => ({ topic, groups }))
+    .sort((a, b) => b.groups.length - a.groups.length || a.topic.localeCompare(b.topic, 'ko'));
   for (const q of pack.questions) idx.questions.set(q.id, q);
   idx.topics = Array.from(new Set([].concat(
     Object.keys(pack.phrases || {}), Object.keys(pack.lexicon || {}), Object.keys(pack.extra || {}))))

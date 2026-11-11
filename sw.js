@@ -25,24 +25,14 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== location.origin) return;
   const isData = /\/(data|md)\//.test(url.pathname);
 
-  // network-first for data/docs and navigations; stale-while-revalidate for the shell so
-  // that an updated app.js/style.css actually takes effect on the next visit.
-  const strategy = (isData || req.mode === 'navigate')
-    ? fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(req).then((hit) => hit || caches.match('index.html')))
-    : caches.match(req).then((hit) => {
-        const fresh = fetch(req).then((res) => {
-          if (res && res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-          }
-          return res;
-        }).catch(() => hit);
-        return hit || fresh;
-      });
+  // Network-first everywhere (so a new build is never stale), cache as the offline fallback.
+  const strategy = fetch(req).then((res) => {
+    if (res && res.ok) {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+    }
+    return res;
+  }).catch(() => caches.match(req).then((hit) => hit || (req.mode === 'navigate' ? caches.match('index.html') : undefined)));
 
   e.respondWith(strategy);
 });

@@ -11,6 +11,8 @@ export function parseHash() {
   const [a, b] = segs;
   if (!a || a === 'home') return { name: 'home', query };
   if (a === 'shadow') return { name: 'shadow', query };
+  if (a === 'topics') return { name: 'topics', query };
+  if (a === 'topic') return { name: 'topic', arg: decodeURIComponent(b || ''), query };
   if (a === 'v') return { name: 'video', arg: b, query };
   if (a === 's') return { name: 'session', arg: b, query };
   if (a === 'questions') return { name: 'questions', query };

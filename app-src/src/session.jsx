@@ -48,17 +48,21 @@ export function Session({ gid, from, toast }) {
   const group = idx.groups.get(cur) || idx.groups.get(queue[0]);
   const items = group ? group.items : [];
   const qIndex = Math.max(0, queue.indexOf(group ? group.gid : cur));
-  /* a group can belong to several videos (the same sentences are re-uploaded); show where we came from */
-  const video = group
-    ? (from && group.videos.includes(from) ? group.video_of[from] : group.video)
-    : null;
-  if (group && !group.video_of) {
-    group.video_of = {};
-    for (const vid of group.videos) {
-      const v = (idx.videos || []).find((x) => x.id === vid);
-      if (v) group.video_of[vid] = v;
+  /* a group can belong to several videos (the same sentences are re-uploaded): credit the one we
+     came from when the caller passed one, otherwise the group's first source. Never mutated. */
+  const video = useMemo(() => {
+    if (!group) return null;
+    if (from && group.videos.includes(from)) {
+      const hit = idx.videos.find((v) => v.id === from);
+      if (hit) return hit;
     }
-  }
+    return group.video;
+  }, [group, from]);
+
+  /* the route is the source of truth: deep links, back/forward and in-app links must switch group */
+  useEffect(() => {
+    if (gid && gid !== cur && idx.groups.has(gid)) { setCur(gid); setSi(0); }
+  }, [gid]);
 
   /* stop speech on route/group change and on unmount */
   useEffect(() => { setSi(0); setPhase('idle'); setRevealed(new Set()); tts.stop(); }, [cur]);
@@ -70,8 +74,6 @@ export function Session({ gid, from, toast }) {
     if (navigator.wakeLock) navigator.wakeLock.request('screen').then((l) => { lock = l; }).catch(() => {});
     return () => { lock && lock.release && lock.release().catch(() => {}); };
   }, []);
-
-  useEffect(() => { history.replaceState(null, '', `#/s/${group ? group.gid : cur}${from ? '?from=' + from : ''}`); }, [cur]);
 
   const clearTimers = () => { clearTimeout(gapTimer.current); cancelAnimationFrame(rafRef.current); };
 
@@ -125,16 +127,24 @@ export function Session({ gid, from, toast }) {
 
   function stop() { clearTimers(); tts.stop(); setPhase('idle'); setGapPct(1); }
 
+  /* the single place the session changes group: the user asked for it, so the URL follows.
+     Mounting never writes the URL — otherwise an external navigation gets overwritten. */
+  function jumpTo(nextGid) {
+    stop();
+    setCur(nextGid);
+    history.replaceState(null, '', `#/s/${nextGid}${from ? '?from=' + from : ''}`);
+  }
+
   function move(delta) {
     const n = qIndex + delta;
     if (n < 0 || n >= queue.length) { toast('그룹의 끝입니다'); return; }
-    stop(); setCur(queue[n]);
+    jumpTo(queue[n]);
   }
 
   function rate(rating) {
     progress.rate(group.gid, rating);
     toast(rating === 'again' ? '다시 볼 그룹으로 표시했습니다' : rating === 'ok' ? '3일 뒤 복습' : '7일 뒤 복습');
-    if (qIndex + 1 < queue.length) setTimeout(() => { stop(); setCur(queue[qIndex + 1]); }, 220);
+    if (qIndex + 1 < queue.length) setTimeout(() => jumpTo(queue[qIndex + 1]), 220);
     else { stop(); go('/shadow'); }
   }
 
@@ -150,7 +160,7 @@ export function Session({ gid, from, toast }) {
         h(IconBtn, { icon: IconChevL, label: '이전 그룹', size: 20, onClick: () => move(-1) }),
         h('div', { style: 'text-align:center;min-width:104px' },
           h('div', { class: 'title num' }, `${qIndex + 1} / ${queue.length}`),
-          h('div', { class: 'sub nowrap' }, video ? video.short : '')),
+          h('div', { class: 'sub nowrap' }, [group.topic, video ? video.short : ''].filter(Boolean).join(' · '))),
         h(IconBtn, { icon: IconChevR, label: '다음 그룹', size: 20, onClick: () => move(1) })),
       h(IconBtn, { icon: IconList, label: '그룹 목록', onClick: () => setListSheet(true) })),
 
@@ -161,7 +171,9 @@ export function Session({ gid, from, toast }) {
       h('div', { class: 'phrase-head' },
         h('button', { class: 'tap', onClick: () => tts.speak(group.phrase, { rate: speed, voiceName: st.settings.voice }) },
           h('h1', { class: 'phrase-eyebrow en' }, group.phrase, h('span', { class: 'dim3 t-cap' }, '  🔊'))),
-        h('p', { class: 't-cap dim3' }, `${group.count}문장 · ${video ? video.short : ''}${video && video.level ? ' · ' + video.level + ' 목표' : ''}`)),
+        h('p', { class: 't-cap dim3' },
+          [group.topic, `${group.count}문장`, video ? video.short : '', video && video.level ? video.level + ' 목표' : '']
+            .filter(Boolean).join(' · '))),
 
       h('div', { class: 'sentstack' },
         items.map((it, i) => {
@@ -232,12 +244,12 @@ export function Session({ gid, from, toast }) {
         if (!g) return null;
         const p = progress.get(g2);
         return h('button', {
-          key: g2, class: 'rowitem', onClick: () => { setListSheet(false); stop(); setCur(g2); },
+          key: g2, class: 'rowitem', onClick: () => { setListSheet(false); jumpTo(g2); },
         },
           h('span', { class: `dot ${p.state === 'done' ? 'done' : 'muted'}` }),
           h('div', { class: 'grow' },
             h('div', { class: 'rt en' }, g.phrase),
-            h('div', { class: 'rs' }, `${g.video.short} · ${g.count}문장${p.state === 'done' ? ' · 완료' : ''}`)),
+            h('div', { class: 'rs' }, `${g.topic ? g.topic + ' · ' : ''}${g.video.short} · ${g.count}문장${p.state === 'done' ? ' · 완료' : ''}`)),
           h('span', { class: 't-cap dim3 num' }, `${i + 1}`));
       })),
     }) : null);
