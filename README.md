@@ -37,21 +37,26 @@ no runtime markdown parser (documents are rendered to HTML at build time).
 
 ```
 index.html                 app shell (theme applied before first paint)
-assets/js/app.js           bundle (65 KB)
+assets/js/app.js           bundle (74 KB)
 assets/js/app.css          stylesheet (14 KB), design tokens in :root
 data/study-pack.json       the study pack, downloaded once
 data/docs.json             pre-rendered markdown documents
 data/version.json          version + size + counts
-sw.js                      offline cache (network-first for data, SWR for the shell)
+md/*.md                    markdown documents (incl. mock-exams.md, kangjiwan-material.md)
+sw.js                      offline cache (network-first everywhere, cache as offline fallback)
 app-src/                   source: src/*.jsx, src/style.css, build.mjs
 ```
+
+The documents are regenerated from the extracted data on every build: `sentences-by-phrase.md`,
+`sentences-plain.md`, `phrases-by-topic.md`, `mock-exams.md`, `kangjiwan-material.md`, the five
+`site-*.md` files and the pack index.
 
 Build:
 
 ```bash
 cd app-src
 npm install
-npm run build      # writes ../app/assets/js/app.{js,css} and ../app/data/docs.json
+npm run build      # writes assets/js/app.{js,css} and data/docs.json (repo root is the site)
 ```
 
 ## How the content was produced
