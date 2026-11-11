@@ -71,7 +71,7 @@ npm run build      # writes ../app/assets/js/app.{js,css} and ../app/data/docs.j
 5. Three 강지완 오픽TV videos have a different slide format each (Q&A answers, 150 numbered 선택주제
    sentences with translations, 72 master patterns with slots), so each was OCR'd with its own
    prompt and de-duplicated by text; gaps were re-sampled more densely and merged.
-4. The site data came from its own JSON/JS files, dumped verbatim, then rendered into markdown and
+6. The site data came from its own JSON/JS files, dumped verbatim, then rendered into markdown and
    into the app bundle. Sentences re-used across videos collapse into one study unit with several
    source videos.
 
