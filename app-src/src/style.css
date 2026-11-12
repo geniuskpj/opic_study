@@ -330,3 +330,37 @@ tr:last-child td { border-bottom: 0; }
 .st-ok { color: var(--done); font-weight: 700; }
 .st-part { color: var(--warn); font-weight: 700; }
 .st-miss { color: #e5484d; font-weight: 700; }
+
+/* ---------------------------------------------------------- answer player (always visible) */
+.player {
+  display: flex; align-items: center; gap: 10px; margin-top: 10px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 8px 10px;
+}
+.player audio { display: none; }
+.player .pbtn {
+  width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--on-accent);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.player .pseek {
+  flex: 1 1 auto; min-width: 60px; height: 6px; -webkit-appearance: none; appearance: none;
+  background: var(--surface-3); border-radius: 99px; min-height: 6px; padding: 0; border: 0;
+}
+.player .pseek::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface); cursor: pointer;
+}
+.player .pseek::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--accent); }
+.player .ptime { font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.player .plabel { font-size: 12px; color: var(--text-3); }
+
+/* ---------------------------------------------------------- grading history + model row */
+.hist { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s4); }
+.hist .rowitem.cur { background: var(--accent-tint); }
+.hist .rowitem { border-radius: var(--r-sm); }
+.modelrow {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-bottom: var(--s3); margin-bottom: var(--s3); border-bottom: 1px solid var(--border);
+}
+.modelrow select { width: auto; min-height: 38px; padding: 6px 10px; font-size: 14px; flex: 0 1 auto; }

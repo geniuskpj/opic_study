@@ -1,34 +1,115 @@
-/* recorder.jsx — record one answer, send it for scoring, show the F-A-C-T feedback.
-   Scoring uses the learner's own Gemini key (Settings); the request goes straight to Google. */
+/* recorder.jsx — record one answer, grade it with the learner's own Gemini key, keep the history.
+ *
+ * Recordings are kept in IndexedDB (audio-store.js) both as a draft (recorded but not graded yet)
+ * and attached to every grading entry, so leaving the page never loses a take. */
 import { h } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { answers } from './core.js';
-import { hasKey, startRecording, blobToWav, scoreAnswer } from './score.js';
-import { Btn, IconBtn, Chip, Seg, IconPlay, IconClose, IconCheck, IconGear } from './ui.jsx';
+import { hasKey, startRecording, blobToWav, scoreAnswer, aiSettings, saveAiSettings, MODEL_CHOICES } from './score.js';
+import { getClip, putClip, delClip, clipKey } from './audio-store.js';
+import { useStore } from './router.js';
+import {
+  Btn, IconBtn, Seg, IconPlay, IconPause, IconClose, IconCheck, IconTrash, IconStar, IconChevL, IconChevR,
+} from './ui.jsx';
 
 const fmt = (ms) => `${String(Math.floor(ms / 60000)).padStart(2, '0')}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')}`;
+const fmtSec = (t) => (isFinite(t) && t > 0 ? `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}` : '0:00');
+const draftKey = (examId, qid) => `${examId}|${qid}|draft`;
 
-export function AnswerRecorder({ examId, examTitle, qid, question, topic, level, nextQid, onOpenSettings, compact }) {
-  const saved = answers.get(examId, qid);
-  const [phase, setPhase] = useState(saved ? 'done' : 'idle');   // idle | rec | ready | scoring | done | error
-  const [elapsed, setElapsed] = useState(0);
+/* ------------------------------------------------------------------ player */
+export function Player({ src, onDelete, label }) {
+  const audio = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [pos, setPos] = useState(0);
+  const [dur, setDur] = useState(0);
+
+  useEffect(() => {
+    const a = audio.current;
+    if (!a) return undefined;
+    const onTime = () => setPos(a.currentTime || 0);
+    const onMeta = () => setDur(a.duration || 0);
+    const onEnd = () => { setPlaying(false); setPos(0); };
+    a.addEventListener('timeupdate', onTime);
+    a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('durationchange', onMeta);
+    a.addEventListener('ended', onEnd);
+    return () => {
+      a.removeEventListener('timeupdate', onTime);
+      a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('durationchange', onMeta);
+      a.removeEventListener('ended', onEnd);
+    };
+  }, [src]);
+
+  if (!src) return null;
+  return h('div', { class: 'player' },
+    h('audio', { ref: audio, src, preload: 'metadata' }),
+    h('button', {
+      class: 'pbtn', 'aria-label': playing ? '일시정지' : '재생',
+      onClick: () => {
+        const a = audio.current;
+        if (!a) return;
+        if (playing) { a.pause(); setPlaying(false); } else { a.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); }
+      },
+    }, playing ? h(IconPause, { size: 18 }) : h(IconPlay, { size: 18 })),
+    h('input', {
+      class: 'pseek', type: 'range', min: 0, max: 100, step: 0.1,
+      value: dur ? (pos / dur) * 100 : 0,
+      onInput: (e) => {
+        const a = audio.current;
+        if (!a || !dur) return;
+        a.currentTime = (Number(e.currentTarget.value) / 100) * dur;
+        setPos(a.currentTime);
+      },
+    }),
+    h('span', { class: 'ptime num' }, `${fmtSec(pos)} / ${fmtSec(dur)}`),
+    label ? h('span', { class: 'plabel' }, label) : null,
+    onDelete ? h(IconBtn, { icon: IconTrash, label: '녹음 삭제', sm: true, onClick: onDelete }) : null);
+}
+
+/* ------------------------------------------------------------------ recorder */
+export function AnswerRecorder({ examId, examTitle, qid, question, topic, level, nextQid, onOpenSettings, showHistory = true }) {
+  const st = useStore();
+  const entries = answers.entries(examId, qid);
+  const latest = entries.length ? entries[entries.length - 1] : null;
+
+  const [phase, setPhase] = useState('idle');          // idle | rec | ready | scoring | error
   const [err, setErr] = useState('');
-  const [fb, setFb] = useState(saved ? saved.feedback : null);
-  const [mode, setMode] = useState('voice');                     // voice | text
+  const [take, setTake] = useState(null);              // {blob, url, ms} — current, ungraded
+  const [urls, setUrls] = useState({});                // audioKey -> objectURL
+  const [openId, setOpenId] = useState(latest ? latest.id : null);
+  const [histOpen, setHistOpen] = useState(false);
+  const [, setSt] = useState(0);
+  const [mode, setMode] = useState('voice');
   const [typed, setTyped] = useState('');
   const rec = useRef(null);
   const timer = useRef(0);
-  const audioUrl = useRef(null);
-  const [audio, setAudio] = useState(null);
 
+  const shown = entries.find((e) => e.id === openId) || latest;
+
+  /* restore the draft take + the audio of every stored entry for this question */
   useEffect(() => {
-    setPhase(saved ? 'done' : 'idle'); setFb(saved ? saved.feedback : null); setErr('');
-    setAudio(null); setElapsed(0); setTyped('');
-    if (audioUrl.current) { URL.revokeObjectURL(audioUrl.current); audioUrl.current = null; }
-    return () => { clearInterval(timer.current); if (rec.current) rec.current.cancel(); };
+    let dead = false;
+    setErr(''); setPhase('idle'); setTake(null); setTyped('');
+    (async () => {
+      const draft = await getClip(draftKey(examId, qid));
+      if (!dead && draft instanceof Blob) setTake({ blob: draft, url: URL.createObjectURL(draft), ms: 0 });
+      const next = {};
+      for (const e of entries) {
+        if (!e.audio) continue;
+        if (urls[e.audio]) { next[e.audio] = urls[e.audio]; continue; }
+        const blob = await getClip(e.audio);
+        if (blob instanceof Blob) next[e.audio] = URL.createObjectURL(blob);
+      }
+      if (!dead && Object.keys(next).length) setUrls((u) => ({ ...u, ...next }));
+    })();
+    return () => { dead = true; clearInterval(timer.current); if (rec.current) rec.current.cancel(); };
   }, [examId, qid]);
 
+  useEffect(() => { setOpenId(latest ? latest.id : null); }, [latest && latest.id]);
+
   const tick = () => { if (rec.current) setElapsed(rec.current.elapsed()); };
+  const [elapsed, setElapsed] = useState(0);
 
   async function begin() {
     setErr('');
@@ -42,40 +123,77 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
       setPhase('error');
     }
   }
+
   async function stopRec() {
     clearInterval(timer.current);
+    const ms = rec.current ? rec.current.elapsed() : 0;
     const blob = await rec.current.stop();
     rec.current = null;
-    if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
-    audioUrl.current = URL.createObjectURL(blob);
-    setAudio({ url: audioUrl.current, blob, ms: elapsed });
+    const url = URL.createObjectURL(blob);
+    setTake({ blob, url, ms });
     setPhase('ready');
+    /* survive navigation: the draft is stored immediately */
+    putClip(draftKey(examId, qid), blob);
   }
+
   function cancelRec() {
     clearInterval(timer.current);
     if (rec.current) { rec.current.cancel(); rec.current = null; }
-    setPhase('idle'); setElapsed(0);
+    setPhase('idle');
+  }
+
+  async function discardTake() {
+    if (take) URL.revokeObjectURL(take.url);
+    setTake(null); setPhase('idle');
+    await delClip(draftKey(examId, qid));
   }
 
   async function submit() {
     setPhase('scoring'); setErr('');
     try {
-      let wav = null;
-      if (mode === 'voice' && audio && audio.blob && audio.ms > 800) wav = await blobToWav(audio.blob);
+      const wav = mode === 'voice' && take && take.blob && take.ms > 700 ? await blobToWav(take.blob) : null;
       const feedback = await scoreAnswer({
         wavBytes: wav, question, examTitle, topic, level,
         questionId: qid, nextQuestionId: nextQid,
         transcriptHint: mode === 'text' ? typed : undefined,
       });
-      answers.save(examId, qid, { at: Date.now(), ms: audio ? audio.ms : 0, feedback });
-      setFb(feedback); setPhase('done');
+      const id = 'e' + Date.now();
+      const audio = mode === 'voice' && take ? clipKey(examId, qid, id) : null;
+      if (audio) await putClip(audio, take.blob);
+      answers.add(examId, qid, { id, at: Date.now(), ms: take ? take.ms : 0, feedback, audio, mode });
+      await delClip(draftKey(examId, qid));
+      if (audio) setUrls((u) => ({ ...u, [audio]: take.url }));
+      setOpenId(id);
+      setTake(null);
+      setPhase('idle');
     } catch (e) {
-      setErr(String(e.message || e)); setPhase('error');
+      setErr(String(e.message || e));
+      setPhase('error');
     }
   }
 
+  async function removeEntry(e) {
+    if (!confirm('이 채점 기록을 삭제할까요?')) return;
+    if (e.audio) {
+      URL.revokeObjectURL(urls[e.audio]);
+      await delClip(e.audio);
+    }
+    answers.remove(examId, qid, e.id);
+  }
+
+  const ai = aiSettings();
+  const modelRow = h('div', { class: 'modelrow' },
+    h('span', { class: 'hint' }, '모델'),
+    h('select', {
+      value: ai.model, 'aria-label': '채점 모델',
+      onChange: (e) => { saveAiSettings({ model: e.currentTarget.value }); setSt((n) => n + 1); },
+    }, MODEL_CHOICES.map((m) => h('option', { key: m, value: m }, m))),
+    h('span', { class: 'grow' }),
+    h(Btn, { onClick: onOpenSettings }, '키·설정'));
+
   if (!hasKey()) {
     return h('div', { class: 'rec' },
+      modelRow,
       h('div', { class: 'row' },
         h('div', { class: 'grow' },
           h('div', { class: 't-b' }, '답변 채점 (Gemini)'),
@@ -85,21 +203,24 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
 
   return h('div', { class: 'col', style: 'gap:12px' },
     h('div', { class: 'rec' },
+      modelRow,
       h('div', { class: 'row' },
         phase === 'rec'
           ? h('button', { class: 'mic recording', onClick: stopRec, 'aria-label': '녹음 중지' }, h(IconClose, { size: 26 }))
-          : phase === 'ready' || phase === 'scoring'
-            ? h(IconBtn, { icon: IconClose, label: '다시 녹음', variant: 'bordered', onClick: () => { setPhase('idle'); setAudio(null); } })
+          : (take || shown)
+            ? h(IconBtn, { icon: IconClose, label: '다시 녹음', variant: 'bordered', onClick: () => { discardTake(); } })
             : h('button', { class: 'mic', onClick: begin, 'aria-label': '녹음 시작', disabled: mode === 'text' }, h('span', { style: 'font-size:22px' }, '🎙')),
         h('div', { class: 'grow' },
-          h('div', { class: 'timer' }, fmt(phase === 'rec' ? elapsed : audio ? audio.ms : 0)),
+          h('div', { class: 'timer' }, fmt(phase === 'rec' ? elapsed : take ? take.ms : (shown ? shown.ms : 0))),
           h('div', { class: 'hint' },
             phase === 'rec' ? '녹음 중… 답변이 끝나면 정지 버튼을 누르세요'
-              : audio ? '녹음 완료 · 재생해 보거나 바로 채점하세요'
+              : take ? '아직 채점하지 않은 녹음입니다 · 채점하거나 다시 녹음하세요'
                 : mode === 'text' ? '글로 답변을 적고 채점할 수 있습니다'
                   : '버튼을 눌러 답변을 녹음하세요 (OPIc처럼 크게, 끝까지)')),
         phase === 'rec' ? h('div', { class: 'wave' }, [0, 1, 2, 3, 4, 5, 6].map((i) => h('i', { key: i }))) : null),
-      audio ? h('audio', { src: audio.url, controls: true, style: 'width:100%;margin-top:10px' }) : null,
+
+      take ? h(Player, { src: take.url, label: '방금 녹음' }) : null,
+
       h('div', { class: 'row mt3' },
         h(Seg, {
           value: mode,
@@ -107,20 +228,48 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
           onChange: (v) => { if (phase === 'rec') cancelRec(); setMode(v); },
         }),
         h('div', { class: 'grow' }),
-        (mode === 'text' ? typed.trim().length > 0 : (phase === 'ready' || phase === 'done' || phase === 'error'))
-          ? h(Btn, { variant: 'primary', onClick: submit, disabled: phase === 'scoring' }, fb ? '다시 채점' : '채점하기') : null,
+        (mode === 'text' ? typed.trim().length > 0 : !!take || !!shown)
+          ? h(Btn, { variant: 'primary', onClick: submit, disabled: phase === 'scoring' }, shown ? '다시 채점' : '채점하기') : null,
         phase === 'scoring' ? h('span', { class: 'hint' }, '채점 중… (10~30초)') : null),
+
       mode === 'text' ? h('div', null,
         h('textarea', {
           class: 'mt3', rows: 5, placeholder: '영어로 답변을 적어 주세요 (문법·구성 위주로 채점됩니다)',
           value: typed, onInput: (e) => setTyped(e.currentTarget.value),
         }),
         h('p', { class: 'hint mt2' }, '글로 채점하면 발음 평가는 제외됩니다. 녹음 모드에서는 발음·억양도 함께 봅니다.')) : null,
-      err ? h('p', { class: 'hint mt3', style: 'color:#e5484d' }, err) : null,
-      fb ? h('p', { class: 'hint mt2' }, `채점 완료 · ${new Date(fb.at).toLocaleString('ko-KR')} · 모델 ${fb.model || ''}`) : null),
 
-    fb ? h(Feedback, { fb }) : null);
+      err ? h('p', { class: 'hint mt3', style: 'color:#e5484d' }, err) : null),
+
+    /* ---- history of gradings for this question */
+    showHistory && entries.length ? h('div', { class: 'hist' },
+      h('div', { class: 'row' },
+        h('b', { class: 'grow' }, `채점 기록 ${entries.length}개`),
+        h(Btn, { onClick: () => setHistOpen(!histOpen) }, histOpen ? '접기' : '펼치기')),
+      histOpen ? h('div', { class: 'list mt3' }, [...entries].reverse().map((e) => h('div', {
+        key: e.id, class: `rowitem ${e.id === (shown && shown.id) ? 'cur' : ''}`,
+      },
+        h('span', { class: `dot ${e.id === (shown && shown.id) ? '' : 'muted'}` }),
+        h('button', {
+          class: 'grow col', style: 'background:none;border:0;text-align:left;color:inherit;cursor:pointer;min-width:0',
+          onClick: () => setOpenId(e.id),
+        },
+          h('div', { class: 'rt' },
+            (e.feedback.level_estimate || {}).band || '채점',
+            h('span', { class: 'dim t-s' }, `  ${new Date(e.at).toLocaleString('ko-KR')}`),
+            e.mode === 'text' ? h('span', { class: 'badge' }, '글') : null),
+          h('div', { class: 'rs nowrap' }, (e.feedback.transcript || '').slice(0, 70))),
+        h(IconBtn, { icon: IconTrash, label: '기록 삭제', sm: true, onClick: () => removeEntry(e) })))
+      ) : null) : null,
+
+    /* ---- feedback of the selected grading */
+    shown ? h(divFeedback, { fb: shown.feedback, audioUrl: shown.audio ? urls[shown.audio] : null,
+      onDeleteAudio: () => { if (shown.audio) { URL.revokeObjectURL(urls[shown.audio]); delClip(shown.audio); } } }) : null);
 }
+
+const divFeedback = ({ fb, audioUrl, onDeleteAudio }) => h('div', { class: 'col', style: 'gap:10px' },
+  audioUrl ? h('div', { class: 'rec' }, h('div', { class: 'hint' }, '이 채점의 녹음'), h(Player, { src: audioUrl, onDelete: onDeleteAudio })) : null,
+  h(Feedback, { fb }));
 
 /* ------------------------------------------------------------------ FACT rendering */
 function Status({ s }) {

@@ -5,6 +5,8 @@ import {
   loadPack, checkVersion, store, tts, progress, PACK, stars, resetAll, exportUser, importUser,
 } from './core.js';
 import { aiSettings, saveAiSettings, MODEL_CHOICES, hasKey, startRecording, blobToWav, encodeWav } from './score.js';
+import { estimate, clearClips, requestPersist, pruneClips } from './audio-store.js';
+import { answers } from './core.js';
 import {
   IconHome, IconWave, IconQuiz, IconBook, IconSearch, IconGear, IconClose, Sheet, Seg, Btn, IconBtn, Toast, useToast,
 } from './ui.jsx';
@@ -30,6 +32,11 @@ function SettingsSheet({ onClose, onToast }) {
   const [keyDraft, setKeyDraft] = useState('');
   const [keyState, setKeyState] = useState(hasKey() ? 'saved' : 'none');
   const [diag, setDiag] = useState('');
+  const [store0, setStore0] = useState(null);
+  useEffect(() => { estimate().then(setStore0); }, []);
+  const fmtMB = (b) => (b >= 1024 * 1024 * 1024 ? (b / 1024 / 1024 / 1024).toFixed(1) + ' GB' : (b / 1024 / 1024).toFixed(1) + ' MB');
+  const clipCount = () => Object.keys(store.state.answers)
+    .reduce((a, k) => a + (store.state.answers[k].entries || []).filter((e) => e.audio).length, 0);
   const testMic = async () => {
     setDiag('마이크 확인 중… (권한 허용 필요)');
     try {
@@ -143,6 +150,37 @@ function SettingsSheet({ onClose, onToast }) {
       h(Btn, { onClick: testWav }, '오디오 변환 테스트'),
       diag ? h('span', { class: 'hint' }, diag) : null),
     h('p', { class: 't-cap dim3 mt2' }, '녹음은 브라우저에서 16kHz 모노 WAV로 변환한 뒤 Gemini로 전송됩니다.'),
+    h('div', { class: 'section-head mt6' }, h('h2', null, '녹음 · 저장 공간')),
+    h('p', { class: 't-s dim' },
+      '녹음은 IndexedDB에 저장됩니다. localStorage(약 5MB)와 달리 용량이 훨씬 큽니다.'),
+    h('div', { class: 'kv mt2' },
+      h('b', null, '사용량'), h('span', null, store0 ? `${fmtMB(store0.usage)} / ${fmtMB(store0.quota)}` : '확인 중…'),
+      h('b', null, '저장된 녹음'), h('span', null, `${clipCount()}개`),
+      h('b', null, '영구 저장'), h('span', null, store0 && store0.persisted ? '허용됨' : '기본')),
+    h('div', { class: 'row wrap mt3' },
+      h(Btn, { onClick: () => estimate(true).then(setStore0) }, '용량 새로고침'),
+      h(Btn, {
+        onClick: async () => {
+          const ok = await requestPersist();
+          onToast(ok ? '영구 저장을 허용했습니다' : '브라우저가 허용하지 않았습니다');
+          estimate().then(setStore0);
+        },
+      }, '영구 저장 요청'),
+      h(Btn, {
+        onClick: async () => {
+          if (!confirm('모든 녹음 파일을 삭제할까요? (채점 결과는 유지됩니다)')) return;
+          await clearClips(); answers.stripAudio();
+          onToast('녹음을 모두 삭제했습니다'); estimate().then(setStore0);
+        },
+      }, '녹음만 삭제'),
+      h(Btn, {
+        onClick: () => {
+          if (!confirm('모든 채점 기록과 녹음을 삭제할까요?')) return;
+          clearClips(); answers.clearAll();
+          onToast('채점 기록을 삭제했습니다'); estimate().then(setStore0);
+        },
+      }, '채점 기록 삭제')),
+
     h('div', { class: 'section-head mt6' }, h('h2', null, '데이터')),
     h('p', { class: 't-s dim' }, `콘텐츠 버전 ${PACK.version || '-'} · 저장된 데이터 약 ${(((localStorage.getItem('opic.pack.v2') || '').length) / 1024).toFixed(0)} KB`),
     h('div', { class: 'row wrap mt3' },
@@ -233,7 +271,7 @@ function App() {
       case 'topic': return h(TopicGroups, { name: route.arg });
       case 'session': return h(Session, { gid: route.arg, from: route.query.from, at: route.query.i, toast });
       case 'questions': return h(Questions, { openSearch: () => setSearch(true) });
-      case 'question': return h(QuestionDetail, { id: Number(route.arg), toast });
+      case 'question': return h(QuestionDetail, { id: Number(route.arg), toast, openSettings: () => setSettings(true) });
       case 'exam': return h(ExamList, {});
       case 'examRun': return h(ExamRun, {
         index: /^m\d+$/.test(route.arg) ? route.arg : Number(route.arg),
@@ -272,6 +310,9 @@ function Boot() {
       applyTheme(store.state.settings.theme);
       try {
         const r = await loadPack((p) => setState((s) => ({ ...s, pct: p })));
+        estimate().then(() => {});   // warm the cache so Settings shows numbers immediately
+        /* drop clips whose answer entry no longer exists (e.g. after a manual reset) */
+        pruneClips(answers.audioKeys()).catch(() => {});
         setState((s) => ({ ...s, phase: 'ready', fromCache: r.fromCache, bytes: r.bytes }));
         checkVersion().then((v) => {
           if (v) {

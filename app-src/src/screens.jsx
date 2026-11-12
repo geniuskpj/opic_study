@@ -314,7 +314,8 @@ export function Questions({ openSearch }) {
           h('div', { class: 'grow' },
             h('div', { class: 'row', style: 'gap:6px' },
               h('span', { class: 'rt grow nowrap' }, x.title),
-              x.ans ? h('span', { class: 'dot' }) : null),
+              (() => { const g = answers.latest('qbank', x.id); return g ? h('span', { class: 'badge' },
+                (g.feedback.level_estimate || {}).band || '채점') : x.ans ? h('span', { class: 'dot' }) : null; })()),
             h('div', { class: 'rs', style: 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden' }, x.en)),
           h(IconChevR, { size: 18 })))))) ),
 
@@ -338,7 +339,7 @@ export function Questions({ openSearch }) {
     }) : null);
 }
 
-export function QuestionDetail({ id, toast }) {
+export function QuestionDetail({ id, toast, openSettings }) {
   const st = useStore();
   const q = idx.questions.get(id);
   const [reveal, setReveal] = useState(false);
@@ -388,6 +389,15 @@ export function QuestionDetail({ id, toast }) {
             h('div', { class: 'row mt3' },
               h(Btn, { onClick: () => go('/lib/tpl') }, '템플릿 보기'),
               q.topic ? h(Btn, { onClick: () => go(`/lib/expr?topic=${encodeURIComponent(q.topic)}`) }, `${q.topic} 표현`) : null))),
+
+      h('div', { class: 'section' },
+        h('div', { class: 'section-head' }, h('h2', null, '내 답변 채점'),
+          answers.latest('qbank', q.id)
+            ? h('span', { class: 'badge' }, (answers.latest('qbank', q.id).feedback.level_estimate || {}).band || '채점됨') : null),
+        h(AnswerRecorder, {
+          examId: 'qbank', examTitle: `문제집 · ${q.topic}`, qid: q.id, question: q.en,
+          topic: q.topic, level: 'IH', onOpenSettings: openSettings,
+        })),
 
       tpl ? h('div', { class: 'section' },
         h('div', { class: 'section-head' }, h('h2', null, `${q.kind} 유형 문장`)),

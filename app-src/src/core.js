@@ -244,17 +244,65 @@ export const stars = {
 /* ------------------------------------------------------------------ answers & feedback */
 export const answers = {
   key: (examId, qid) => `${examId}:${qid}`,
-  get(examId, qid) { return store.state.answers[this.key(examId, qid)] || null; },
-  save(examId, qid, payload) {
-    store.patch((s) => { s.answers[this.key(examId, qid)] = payload; });
+
+  /** { entries: [{id, at, ms, feedback, audio}] } — newest last. Older single-result rows migrate. */
+  raw(examId, qid) {
+    const v = store.state.answers[this.key(examId, qid)];
+    if (!v) return null;
+    if (Array.isArray(v.entries)) return v;
+    if (v.feedback) return { entries: [{ id: 'e' + (v.at || 0), at: v.at || 0, ms: v.ms || 0, feedback: v.feedback }] };
+    return { entries: [] };
+  },
+  entries(examId, qid) { const r = this.raw(examId, qid); return r ? r.entries : []; },
+  latest(examId, qid) { const e = this.entries(examId, qid); return e.length ? e[e.length - 1] : null; },
+  get(examId, qid) { return this.latest(examId, qid); },
+
+  add(examId, qid, entry) {
+    store.patch((s) => {
+      const k = this.key(examId, qid);
+      const cur = this.raw(examId, qid) || { entries: [] };
+      s.answers[k] = { entries: [...cur.entries, entry] };
+    });
+    return entry;
+  },
+  remove(examId, qid, entryId) {
+    store.patch((s) => {
+      const k = this.key(examId, qid);
+      const cur = this.raw(examId, qid);
+      if (!cur) return;
+      const left = cur.entries.filter((e) => e.id !== entryId);
+      if (left.length) s.answers[k] = { entries: left };
+      else delete s.answers[k];
+    });
   },
   clear(examId, qid) { store.patch((s) => { delete s.answers[this.key(examId, qid)]; }); },
+  /** forget the recordings but keep every grading result */
+  stripAudio() {
+    store.patch((s) => {
+      for (const k of Object.keys(s.answers)) {
+        const cur = this.raw(k.split(':')[0], k.split(':')[1]);
+        if (!cur) continue;
+        s.answers[k] = { entries: cur.entries.map((e) => { const c = { ...e }; delete c.audio; return c; }) };
+      }
+    });
+  },
+  clearAll() { store.patch((s) => { s.answers = {}; }); },
+
+  /** every clip key still referenced by a stored entry — used to prune orphaned audio */
+  audioKeys() {
+    const out = [];
+    for (const [k, v] of Object.entries(store.state.answers)) {
+      const [examId, qid] = k.split(':');
+      for (const e of (v.entries || [])) if (e.audio) out.push(e.audio);
+    }
+    return out;
+  },
   doneCount(examId) {
-    return Object.keys(store.state.answers).filter((k) => k.startsWith(examId + ':')).length;
+    return Object.keys(store.state.answers)
+      .filter((k) => k.startsWith(examId + ':') && (this.raw(examId, k.split(':')[1]) || { entries: [] }).entries.length)
+      .length;
   },
-  nextUnanswered(examId, ids) {
-    return ids.find((id) => !this.get(examId, id)) ?? null;
-  },
+  nextUnanswered(examId, ids) { return ids.find((id) => !this.get(examId, id)) ?? null; },
 };
 
 /* ------------------------------------------------------------------ progress */
