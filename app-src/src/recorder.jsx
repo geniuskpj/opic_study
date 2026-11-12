@@ -264,7 +264,10 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
 
     /* ---- feedback of the selected grading */
     shown ? h(divFeedback, { fb: shown.feedback, audioUrl: shown.audio ? urls[shown.audio] : null,
-      onDeleteAudio: () => { if (shown.audio) { URL.revokeObjectURL(urls[shown.audio]); delClip(shown.audio); } } }) : null);
+      onDeleteAudio: () => {
+        if (shown.audio) { URL.revokeObjectURL(urls[shown.audio]); delClip(shown.audio); }
+        answers.clearAudio(examId, qid, shown.id);
+      } }) : null);
 }
 
 const divFeedback = ({ fb, audioUrl, onDeleteAudio }) => h('div', { class: 'col', style: 'gap:10px' },

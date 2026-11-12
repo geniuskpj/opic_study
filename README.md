@@ -22,13 +22,27 @@ self-rating (다시 / 보통 / 외움) that schedules the group for review in 0 
 
 ## Mock-exam scoring (bring your own Gemini key)
 
-Every question in the mock exams (video exams and book sets) has a recorder:
+Every question you can answer has a recorder — the mock exams (video exams and the book's 34 sets)
+**and every question in the 문제 tab**:
 
 1. press 🎙, answer out loud for as long as you like (an OPIc answer is 1–2 minutes), stop;
 2. play it back, re-record if you want, and press **채점하기** — you can grade question by question,
    there is no need to finish the whole exam first;
-3. the audio is converted **in the page** to 16 kHz mono WAV and sent to Gemini with the question;
+3. you can switch the grading model right there in the recorder (`gemini-3.6-flash` by default);
+4. the audio is converted **in the page** to 16 kHz mono WAV and sent to Gemini with the question;
    typed answers ("글로 답변") are graded too, minus pronunciation.
+
+**Nothing is lost when you navigate away**: the take is written to IndexedDB the moment you stop
+recording (a draft), and every grading keeps its own clip. Each question keeps a **history** of
+gradings — date, level band and transcript — which you can reopen and delete individually.
+Recordings play in a custom player (play/pause, seek, time) that is visible in both themes.
+Capacity lives in Settings → 녹음 · 저장 공간 (usage/quota from `navigator.storage.estimate()`,
+a persistent-storage request, delete-recordings-only and delete-all-results).
+
+Why IndexedDB and not localStorage: `localStorage` is capped at about 5 MB per origin, and audio is
+binary — a one-minute answer is ~180 KB as Opus, so base64 in localStorage would fill the quota
+after a couple of takes and evict your stars and progress. IndexedDB stores Blobs natively against a
+quota that is a share of free disk (this build reports ~10 GB), which is the right place for audio.
 
 The feedback follows the F-A-C-T framework — **F**unction (was every part of the question answered?),
 **A**ccuracy (real errors, quoted with a correction and the rule in Korean), **C**ontext & Content,

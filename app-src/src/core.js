@@ -276,6 +276,19 @@ export const answers = {
     });
   },
   clear(examId, qid) { store.patch((s) => { delete s.answers[this.key(examId, qid)]; }); },
+  /** drop one entry's recording reference (the clip itself is deleted by the caller) */
+  clearAudio(examId, qid, entryId) {
+    store.patch((s) => {
+      const k = this.key(examId, qid);
+      const cur = this.raw(examId, qid);
+      if (!cur) return;
+      s.answers[k] = { entries: cur.entries.map((e) => {
+        if (e.id !== entryId) return e;
+        const c = { ...e }; delete c.audio; return c;
+      }) };
+    });
+  },
+
   /** forget the recordings but keep every grading result */
   stripAudio() {
     store.patch((s) => {
