@@ -5,6 +5,8 @@ import {
   PACK, idx, progress, store, tts, stars, sentId, exprId, SITE, search, topicLabel, hash32,
 } from './core.js';
 import { go, useStore } from './router.js';
+import { AnswerRecorder, Feedback } from './recorder.jsx';
+import { answers } from './core.js';
 import {
   IconStar, IconStarFill, IconSearch, IconGear, IconChevR, IconBack, IconPlay, IconDoc, IconTimer,
   IconList, IconCheck, IconRefresh, Btn, IconBtn, Chip, Seg, Ring, Empty, Sheet, SearchField, IconClose,
@@ -429,7 +431,7 @@ export function ExamList() {
       }))));
 }
 
-export function ExamRun({ index }) {
+export function ExamRun({ index, openSettings, toast }) {
   const vid = (PACK.mockExams || []).find((e) => e.id === index);
   if (vid) return h(VideoExam, { exam: vid });
   const row = (PACK.exam.comboCatalog || [])[index] || [];
@@ -473,10 +475,16 @@ export function ExamRun({ index }) {
       options.length ? h('div', { class: 'section' },
         h('div', { class: 'section-head' }, h('h2', null, options.length > 1 ? '이 중 하나' : '질문')),
         options.map((qq) => h('div', { key: qq.id, class: 'card' },
-          h('div', { class: 't-ts en' }, qq.en),
+          h('div', { class: 'row' },
+            h('div', { class: 't-ts en grow' }, qq.en),
+            answers.get(`set${index}`, qq.id) ? h('span', { class: 'badge done' }, '채점 완료') : null),
           h('div', { class: 'row mt3' },
             h(IconBtn, { icon: IconPlay, label: '듣기', variant: 'bordered', sm: true, onClick: () => tts.speak(qq.en, { rate: store.state.settings.rate }) }),
-            h(Btn, { onClick: () => go(`/q/${qq.id}`) }, '자세히'))))) : null,
+            h(Btn, { onClick: () => go(`/q/${qq.id}`) }, '자세히')),
+          h('div', { class: 'mt3' }, h(AnswerRecorder, {
+            examId: `set${index}`, examTitle: `문제집 세트 ${index + 1}`, qid: qq.id, question: qq.en,
+            topic: qq.topic, nextQid: (options[1] || {}).id, onOpenSettings: openSettings,
+          }))))) : null,
       h('div', { class: 'row mt5', style: 'gap:8px' },
         h(Btn, { wide: true, onClick: () => setStep(Math.max(0, step - 1)) }, '← 이전'),
         h(Btn, {
@@ -485,18 +493,29 @@ export function ExamRun({ index }) {
         }, step + 1 < row.length ? '다음 단계 →' : '종료'))));
 }
 
-function VideoExam({ exam }) {
+function VideoExam({ exam, openSettings }) {
   const st = useStore();
-  const [step, setStep] = useState(0);
+  const ids = exam.questions.map((q) => q.no);
+  const firstUnanswered = ids.find((id) => !answers.get(exam.id, id));
+  const [step, setStep] = useState(() => {
+    const idx = exam.questions.findIndex((q) => q.no === firstUnanswered);
+    return idx >= 0 ? idx : 0;
+  });
   const q = exam.questions[step] || {};
+  const doneN = ids.filter((id) => answers.get(exam.id, id)).length;
+  const nextId = (exam.questions[step + 1] || {}).no;
+
   return h('div', null,
     h(AppBar, {
-      back: true, title: exam.title, sub: `${step + 1} / ${exam.questions.length} · ${exam.note}`,
+      back: true, title: exam.title,
+      sub: `${step + 1} / ${exam.questions.length} · 채점 ${doneN}개 · ${exam.note}`,
       right: h(IconBtn, { icon: IconList, label: '전체 보기', onClick: () => go('/exam') }),
     }),
     h('div', { class: 'screen' },
       h('div', { class: 'card' },
-        h('div', { class: 't-cap dim' }, `Question ${step + 1} of ${exam.questions.length}`),
+        h('div', { class: 'row' },
+          h('div', { class: 't-cap dim grow' }, `Question ${step + 1} of ${exam.questions.length}`),
+          answers.get(exam.id, q.no) ? h('span', { class: 'badge done' }, '채점 완료') : null),
         h('h1', { class: 't-title en mt2' }, q.en || ''),
         q.kr ? h('p', { class: 't-s dim ko mt2' }, q.kr) : null,
         h('div', { class: 'row mt3' },
@@ -507,17 +526,37 @@ function VideoExam({ exam }) {
           h('span', { class: 't-cap dim3' }, '질문 듣기'),
           q.topic ? h('span', { class: 'badge' }, q.topic) : null,
           q.qid != null ? h(Btn, { onClick: () => go(`/q/${q.qid}`) }, '문제집에서 보기') : null)),
+
+      h('div', { class: 'mt4' },
+        h(AnswerRecorder, {
+          examId: exam.id, examTitle: `${exam.title} (${exam.note})`, qid: q.no, question: q.en,
+          topic: q.topic, level: 'IH', nextQid: nextId, onOpenSettings: openSettings,
+        })),
+
       h('div', { class: 'row mt4', style: 'gap:8px' },
         h(Btn, { wide: true, onClick: () => setStep(Math.max(0, step - 1)) }, '← 이전'),
         h(Btn, {
           variant: 'primary', wide: true,
           onClick: () => setStep(Math.min(exam.questions.length - 1, step + 1)),
         }, '다음 →')),
-      h('div', { class: 'list mt5' }, exam.questions.map((qq, i) => h('button', {
+      firstUnanswered && firstUnanswered !== q.no ? h('div', { class: 'mt3' },
+        h(Btn, {
+          wide: true,
+          onClick: () => {
+            const i = exam.questions.findIndex((x) => x.no === firstUnanswered);
+            if (i >= 0) setStep(i);
+          },
+        }, `아직 안 푼 문제로 이동 (#${firstUnanswered})`)) : null,
+
+      h('div', { class: 'section-head mt6' }, h('h2', null, '문항 목록'),
+        h('span', { class: 't-cap dim3' }, `${doneN} / ${exam.questions.length} 채점`)),
+      h('div', { class: 'list' }, exam.questions.map((qq, i) => h('button', {
         key: i, class: 'rowitem', onClick: () => setStep(i),
       },
-        h('span', { class: `dot ${i < step ? 'done' : i === step ? '' : 'muted'}` }),
+        h('span', { class: `dot ${answers.get(exam.id, qq.no) ? 'done' : i === step ? '' : 'muted'}` }),
         h('div', { class: 'grow' }, h('div', { class: 'rt en nowrap' }, qq.en)),
+        answers.get(exam.id, qq.no) ? h('span', { class: `badge ${(answers.get(exam.id, qq.no).feedback.level_estimate || {}).band ? '' : ''}` },
+          (answers.get(exam.id, qq.no).feedback.level_estimate || {}).band || '완료') : null,
         h('span', { class: 't-cap dim3 num' }, `${i + 1}`))))));
 }
 

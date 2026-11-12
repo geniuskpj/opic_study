@@ -4,6 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
 import {
   loadPack, checkVersion, store, tts, progress, PACK, stars, resetAll, exportUser, importUser,
 } from './core.js';
+import { aiSettings, saveAiSettings, MODEL_CHOICES, hasKey, startRecording, blobToWav, encodeWav } from './score.js';
 import {
   IconHome, IconWave, IconQuiz, IconBook, IconSearch, IconGear, IconClose, Sheet, Seg, Btn, IconBtn, Toast, useToast,
 } from './ui.jsx';
@@ -25,6 +26,38 @@ const navFor = (n) => (n === 'video' || n === 'session' || n === 'topics' || n =
 /* ------------------------------------------------------------------ settings sheet */
 function SettingsSheet({ onClose, onToast }) {
   const s = store.state.settings;
+  const [ai, setAi] = useState(() => aiSettings());
+  const [keyDraft, setKeyDraft] = useState('');
+  const [keyState, setKeyState] = useState(hasKey() ? 'saved' : 'none');
+  const [diag, setDiag] = useState('');
+  const testMic = async () => {
+    setDiag('마이크 확인 중… (권한 허용 필요)');
+    try {
+      const r = await startRecording();
+      setTimeout(async () => {
+        const blob = await r.stop();
+        setDiag(blob.size ? `마이크 OK · ${(blob.size / 1024).toFixed(0)}KB 녹음됨` : '마이크에서 소리가 들어오지 않았습니다');
+      }, 1500);
+    } catch (e) { setDiag('마이크 사용 불가: ' + (e.message || e)); }
+  };
+  const testWav = async () => {
+    setDiag('오디오 변환 테스트…');
+    try {
+      const sr = 48000, len = sr;
+      const samples = new Float32Array(len);
+      for (let i = 0; i < len; i++) samples[i] = Math.sin((2 * Math.PI * 440 * i) / sr) * 0.3;
+      const wav = encodeWav(samples, sr);
+      const back = await blobToWav(new Blob([wav], { type: 'audio/wav' }));
+      setDiag(`변환 OK · ${wav.length} → ${back.length} bytes (48kHz → 16kHz)`);
+    } catch (e) { setDiag('변환 실패: ' + (e.message || e)); }
+  };
+  const testKey = async () => {
+    setKeyState('testing');
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(ai.key)}`);
+      setKeyState(r.ok ? 'ok' : 'bad');
+    } catch (e) { setKeyState('bad'); }
+  };
   const [voices, setVoices] = useState(() => tts.voices());
   useEffect(() => {
     const t = setInterval(() => { const v = tts.voices(); if (v.length) { setVoices(v); clearInterval(t); } }, 250);
@@ -75,6 +108,41 @@ function SettingsSheet({ onClose, onToast }) {
     h('div', { class: 'row mt4' },
       h(ChipToggle, { on: s.auto, label: '자동 진행', onClick: () => set({ auto: !s.auto }) }),
       h(ChipToggle, { on: s.hide, label: '문장 가리기', onClick: () => set({ hide: !s.hide }) })),
+    h('div', { class: 'section-head mt6' }, h('h2', null, 'AI 채점 (Gemini)')),
+    h('p', { class: 't-s dim' },
+      '모의고사에서 녹음한 답변을 Gemini로 채점합니다. 키는 이 브라우저(localStorage)에만 저장되고, '
+      + '요청은 Google API로 바로 전송됩니다. 다른 곳으로 보내지 않습니다.'),
+    h('div', { class: 'row mt2' },
+      h('input', {
+        type: 'text', id: 'aiKey', placeholder: ai.key ? '저장됨 · 새 키를 넣으면 교체됩니다' : 'AIza… 로 시작하는 Gemini API 키',
+        value: keyDraft, autocomplete: 'off', spellcheck: false,
+        onInput: (e) => setKeyDraft(e.currentTarget.value.trim()),
+      })),
+    h('div', { class: 'row mt2' },
+      h(Btn, {
+        variant: 'primary', onClick: () => {
+          if (!keyDraft) { onToast('키를 입력하세요'); return; }
+          setAi(saveAiSettings({ key: keyDraft })); setKeyDraft(''); setKeyState('saved');
+          onToast('API 키를 저장했습니다');
+        },
+      }, '키 저장'),
+      h(Btn, { onClick: testKey }, '연결 테스트'),
+      ai.key ? h(Btn, {
+        onClick: () => { setAi(saveAiSettings({ key: '' })); setKeyState('none'); onToast('키를 삭제했습니다'); },
+      }, '키 삭제') : null,
+      h('span', { class: 'hint' },
+        keyState === 'ok' ? '✅ 키가 정상입니다' : keyState === 'bad' ? '❌ 키를 확인하세요'
+          : keyState === 'testing' ? '확인 중…' : ai.key ? '키 저장됨' : '키 없음')),
+    h('label', { class: 'f mt2' }, '모델'),
+    h('select', {
+      value: ai.model, onChange: (e) => setAi(saveAiSettings({ model: e.currentTarget.value })),
+    }, MODEL_CHOICES.map((m) => h('option', { key: m, value: m }, m))),
+    h('div', { class: 'section-head mt6' }, h('h2', null, '진단')),
+    h('div', { class: 'row wrap' },
+      h(Btn, { onClick: testMic }, '마이크 테스트'),
+      h(Btn, { onClick: testWav }, '오디오 변환 테스트'),
+      diag ? h('span', { class: 'hint' }, diag) : null),
+    h('p', { class: 't-cap dim3 mt2' }, '녹음은 브라우저에서 16kHz 모노 WAV로 변환한 뒤 Gemini로 전송됩니다.'),
     h('div', { class: 'section-head mt6' }, h('h2', null, '데이터')),
     h('p', { class: 't-s dim' }, `콘텐츠 버전 ${PACK.version || '-'} · 저장된 데이터 약 ${(((localStorage.getItem('opic.pack.v2') || '').length) / 1024).toFixed(0)} KB`),
     h('div', { class: 'row wrap mt3' },
@@ -167,7 +235,10 @@ function App() {
       case 'questions': return h(Questions, { openSearch: () => setSearch(true) });
       case 'question': return h(QuestionDetail, { id: Number(route.arg), toast });
       case 'exam': return h(ExamList, {});
-      case 'examRun': return h(ExamRun, { index: /^m\d+$/.test(route.arg) ? route.arg : Number(route.arg) });
+      case 'examRun': return h(ExamRun, {
+        index: /^m\d+$/.test(route.arg) ? route.arg : Number(route.arg),
+        openSettings: () => setSettings(true), toast,
+      });
       case 'library': return h(Library, { seg: route.arg, topic: route.query.topic, openSearch: () => setSearch(true) });
       case 'doc': return h(DocReader, { file: route.arg });
       case 'saved': return h(Saved, { toast });

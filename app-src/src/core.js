@@ -201,7 +201,7 @@ export async function checkVersion() {
 
 /* ------------------------------------------------------------------ user store */
 export function emptyUser() {
-  return { v: USER_VERSION, stars: { sent: {}, q: {}, expr: {} }, prog: {}, settings: {
+  return { v: USER_VERSION, stars: { sent: {}, q: {}, expr: {} }, prog: {}, answers: {}, settings: {
     theme: null, voice: null, rate: 0.92, gap: 'auto', auto: true, hide: false }, today: { date: '', count: 0 } };
 }
 
@@ -211,6 +211,7 @@ function migrate(raw) {
   const u = { ...base, ...raw };
   u.stars = { sent: {}, q: {}, expr: {}, ...(raw.stars || {}) };
   u.prog = raw.prog || {};
+  u.answers = raw.answers || {};
   u.settings = { ...base.settings, ...(raw.settings || {}) };
   u.today = { ...base.today, ...(raw.today || {}) };
   u.v = USER_VERSION;
@@ -238,6 +239,22 @@ export const stars = {
   },
   ids(kind) { return Object.keys(store.state.stars[kind]); },
   count(kind) { return Object.keys(store.state.stars[kind]).length; },
+};
+
+/* ------------------------------------------------------------------ answers & feedback */
+export const answers = {
+  key: (examId, qid) => `${examId}:${qid}`,
+  get(examId, qid) { return store.state.answers[this.key(examId, qid)] || null; },
+  save(examId, qid, payload) {
+    store.patch((s) => { s.answers[this.key(examId, qid)] = payload; });
+  },
+  clear(examId, qid) { store.patch((s) => { delete s.answers[this.key(examId, qid)]; }); },
+  doneCount(examId) {
+    return Object.keys(store.state.answers).filter((k) => k.startsWith(examId + ':')).length;
+  },
+  nextUnanswered(examId, ids) {
+    return ids.find((id) => !this.get(examId, id)) ?? null;
+  },
 };
 
 /* ------------------------------------------------------------------ progress */
