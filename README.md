@@ -11,7 +11,7 @@ questions from a Korean OPIc practice site — packaged as one static app that w
 |---|---|
 | 홈 | continue where you stopped, groups due for review, today's count, shortcuts |
 | 문장 | **one searchable list of all 365 items** — 59 shadowing phrase groups (296 sentences), 151 선택주제 sentences, 72 master patterns, 83 model answers; filter by source and by OPIc topic (13) |
-| 문제 | 423 past questions (94 with model answers) + **7 video mock exams (98 spoken questions, transcribed)** + the book's 34 exam sets |
+| 문제 | 423 past questions (94 with model answers) + **7 video mock exams (98 spoken questions, transcribed)** + the book's 34 exam sets — every mock-exam question can be answered, recorded and **graded by Gemini** |
 | 자료 | 50 topics of expressions, answer templates, and 12 markdown documents |
 | ★ 저장 | starred sentences, questions and expressions (Settings exports/imports them) |
 
@@ -19,6 +19,28 @@ The core screen is the **shadowing session**: one phrase group at a time, the se
 with the target phrase highlighted, a big play button, speech rate, repeat count, an automatic
 pause after each sentence for you to repeat it out loud, optional text hiding for recall, and a
 self-rating (다시 / 보통 / 외움) that schedules the group for review in 0 / 3 / 7 days.
+
+## Mock-exam scoring (bring your own Gemini key)
+
+Every question in the mock exams (video exams and book sets) has a recorder:
+
+1. press 🎙, answer out loud for as long as you like (an OPIc answer is 1–2 minutes), stop;
+2. play it back, re-record if you want, and press **채점하기** — you can grade question by question,
+   there is no need to finish the whole exam first;
+3. the audio is converted **in the page** to 16 kHz mono WAV and sent to Gemini with the question;
+   typed answers ("글로 답변") are graded too, minus pronunciation.
+
+The feedback follows the F-A-C-T framework — **F**unction (was every part of the question answered?),
+**A**ccuracy (real errors, quoted with a correction and the rule in Korean), **C**ontext & Content,
+**T**ext Type — followed by a verbatim transcript, an IL/IM/IH/AL-style level estimate, a corrected
+sample answer that uses only what you actually said, the top three improvements, a structure for the
+next attempt, and a progress checkpoint. Natural fillers (*Let me think for a second*, *That's a tough
+question*, *Well, I'd say…*) are reported as strategy, never penalised.
+
+Your API key is stored **only in this browser** (`localStorage`, `opic.ai.v1`) and is sent directly to
+Google's API from the page — there is no server in between and nothing is uploaded anywhere else. A
+model picker, a connection test and mic/audio diagnostics live in Settings. Answers and feedback are
+kept per exam+question, so an exam resumes at the first question you have not graded yet.
 
 ## Data is downloaded once
 
