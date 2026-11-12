@@ -320,7 +320,14 @@ function Boot() {
             store.patch(() => {});
           }
         });
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+        if ('serviceWorker' in navigator) {
+          /* register with the same build stamp as the bundle: a new deployment registers a new
+             SW URL, so the browser cannot answer the update check from an HTTP cache */
+          const src = (document.querySelector('script[type="module"][src*="app.js"]') || {}).getAttribute
+            ? document.querySelector('script[type="module"][src*="app.js"]').getAttribute('src') : '';
+          const v = (src.split('?v=')[1] || '').trim();
+          navigator.serviceWorker.register('sw.js' + (v ? '?v=' + v : '')).catch(() => {});
+        }
       } catch (e) {
         setState((s) => ({ ...s, phase: 'error', error: String(e) }));
       }

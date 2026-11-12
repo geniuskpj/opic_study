@@ -12,6 +12,7 @@ import * as esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.dirname(HERE);               // the published site = repo root (index.html lives here)
@@ -103,6 +104,31 @@ const opts = {
 };
 const cssOpts = { ...opts, entryPoints: [path.join(HERE, 'src', 'style.css')], outfile: path.join(OUT, 'assets', 'js', 'app.css') };
 
+/* Cache-busting: GitHub Pages serves assets with max-age=600, so the bundle URL carries a
+   content hash — a new deployment is a new URL and can never be answered from a stale cache. */
+function stampAssets() {
+  const idx = path.join(OUT, 'index.html');
+  let html = fs.readFileSync(idx, 'utf8');
+  const hash = crypto.createHash('sha1');
+  for (const f of ['assets/js/app.js', 'assets/js/app.css']) {
+    hash.update(fs.readFileSync(path.join(OUT, f)));
+  }
+  const v = hash.digest('hex').slice(0, 8);
+  html = html
+    .replace(/(assets\/js\/app\.js)(\?v=[0-9a-f]+)?/g, `$1?v=${v}`)
+    .replace(/(assets\/js\/app\.css)(\?v=[0-9a-f]+)?/g, `$1?v=${v}`);
+  fs.writeFileSync(idx, html);
+  // the service worker's precache list must match the stamped URLs
+  const swp = path.join(OUT, 'sw.js');
+  if (fs.existsSync(swp)) {
+    let sw = fs.readFileSync(swp, 'utf8');
+    sw = sw.replace(/(assets\/js\/app\.js)(\?v=[0-9a-f]+)?/g, `$1?v=${v}`)
+           .replace(/(assets\/js\/app\.css)(\?v=[0-9a-f]+)?/g, `$1?v=${v}`);
+    fs.writeFileSync(swp, sw);
+  }
+  console.log(`stamped assets with ?v=${v}`);
+}
+
 buildDocs();
 if (WATCH) {
   const ctx1 = await esbuild.context(opts);
@@ -115,4 +141,5 @@ if (WATCH) {
   const size = (p) => (fs.statSync(p).size / 1024).toFixed(0) + ' KB';
   console.log('assets/js/app.js  ' + size(opts.outfile));
   console.log('assets/js/app.css ' + size(cssOpts.outfile));
+  stampAssets();
 }
