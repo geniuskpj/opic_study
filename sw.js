@@ -1,5 +1,5 @@
 /* Minimal service worker: offline shell + up-to-date data when online. */
-const CACHE = 'opic-shell-v1';
+const CACHE = 'opic-shell-v2'; /* bump on every asset change: the old cache is deleted in activate */
 const SHELL = ['./', 'index.html', 'assets/js/app.css', 'assets/js/app.js', 'manifest.webmanifest', 'icon.svg', 'data/version.json'];
 
 self.addEventListener('install', (e) => {
