@@ -107,13 +107,15 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
           onChange: (v) => { if (phase === 'rec') cancelRec(); setMode(v); },
         }),
         h('div', { class: 'grow' }),
-        (phase === 'ready' || phase === 'done' || phase === 'error')
+        (mode === 'text' ? typed.trim().length > 0 : (phase === 'ready' || phase === 'done' || phase === 'error'))
           ? h(Btn, { variant: 'primary', onClick: submit, disabled: phase === 'scoring' }, fb ? '다시 채점' : '채점하기') : null,
         phase === 'scoring' ? h('span', { class: 'hint' }, '채점 중… (10~30초)') : null),
-      mode === 'text' ? h('textarea', {
-        class: 'mt3', rows: 5, placeholder: '영어로 답변을 적어 주세요 (문법·구성 위주로 채점됩니다)',
-        value: typed, onInput: (e) => setTyped(e.currentTarget.value),
-      }) : null,
+      mode === 'text' ? h('div', null,
+        h('textarea', {
+          class: 'mt3', rows: 5, placeholder: '영어로 답변을 적어 주세요 (문법·구성 위주로 채점됩니다)',
+          value: typed, onInput: (e) => setTyped(e.currentTarget.value),
+        }),
+        h('p', { class: 'hint mt2' }, '글로 채점하면 발음 평가는 제외됩니다. 녹음 모드에서는 발음·억양도 함께 봅니다.')) : null,
       err ? h('p', { class: 'hint mt3', style: 'color:#e5484d' }, err) : null,
       fb ? h('p', { class: 'hint mt2' }, `채점 완료 · ${new Date(fb.at).toLocaleString('ko-KR')} · 모델 ${fb.model || ''}`) : null),
 
