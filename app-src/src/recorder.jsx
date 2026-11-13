@@ -8,6 +8,7 @@ import { answers } from './core.js';
 import { hasKey, startRecording, blobToWav, scoreAnswer, aiSettings, saveAiSettings, MODEL_CHOICES } from './score.js';
 import { getClip, putClip, delClip, clipKey } from './audio-store.js';
 import { useStore } from './router.js';
+import { holdScreen } from './keepawake.js';
 import {
   Btn, IconBtn, Seg, IconPlay, IconPause, IconClose, IconCheck, IconTrash, IconStar, IconChevL, IconChevR,
 } from './ui.jsx';
@@ -84,6 +85,8 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
   const [typed, setTyped] = useState('');
   const rec = useRef(null);
   const timer = useRef(0);
+  const hold = useRef(null);
+  const [warn, setWarn] = useState('');
 
   const shown = entries.find((e) => e.id === openId) || latest;
 
@@ -103,7 +106,12 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
       }
       if (!dead && Object.keys(next).length) setUrls((u) => ({ ...u, ...next }));
     })();
-    return () => { dead = true; clearInterval(timer.current); if (rec.current) rec.current.cancel(); };
+    return () => {
+      dead = true;
+      clearInterval(timer.current);
+      if (rec.current) rec.current.cancel();
+      if (hold.current) { hold.current.release(); hold.current = null; }
+    };
   }, [examId, qid]);
 
   useEffect(() => { setOpenId(latest ? latest.id : null); }, [latest && latest.id]);
@@ -111,14 +119,41 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
   const tick = () => { if (rec.current) setElapsed(rec.current.elapsed()); };
   const [elapsed, setElapsed] = useState(0);
 
+  function releaseHold() {
+    if (hold.current) { hold.current.release(); hold.current = null; }
+  }
+
+  /* The browser mutes getUserMedia tracks and suspends the page when the screen locks, which is why
+     recording died with the display off. Keep the screen awake, and if the mic is still interrupted
+     (another app took it, permission revoked) stop cleanly and keep the audio captured so far. */
+  async function onInterrupt(reason) {
+    if (!rec.current) return;
+    const ms = rec.current.elapsed();
+    clearInterval(timer.current);
+    const blob = await rec.current.stop();
+    rec.current = null;
+    setTake({ blob, url: URL.createObjectURL(blob), ms });
+    setPhase('ready');
+    setWarn(reason === 'hidden'
+      ? '화면이 꺼지거나 다른 앱으로 전환되어 녹음이 중단되었습니다. 여기까지 녹음한 내용은 저장했어요.'
+      : '마이크가 일시정지되었습니다 (다른 앱이 마이크를 사용 중일 수 있어요). 여기까지 저장했습니다.');
+    await putClip(draftKey(examId, qid), blob);
+    releaseHold();
+  }
+
   async function begin() {
-    setErr('');
+    setErr(''); setWarn('');
     try {
-      rec.current = await startRecording();
+      hold.current = await holdScreen();
+      if (hold.current.kind === 'none') {
+        setWarn('이 브라우저는 화면 잠금 방지를 지원하지 않습니다. 녹음 중에는 화면을 켜 두세요.');
+      }
+      rec.current = await startRecording({ onInterrupt });
       setElapsed(0);
       timer.current = setInterval(tick, 200);
       setPhase('rec');
     } catch (e) {
+      releaseHold();
       setErr('마이크를 사용할 수 없습니다: ' + (e.message || e));
       setPhase('error');
     }
@@ -129,6 +164,7 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
     const ms = rec.current ? rec.current.elapsed() : 0;
     const blob = await rec.current.stop();
     rec.current = null;
+    releaseHold();
     const url = URL.createObjectURL(blob);
     setTake({ blob, url, ms });
     setPhase('ready');
@@ -139,6 +175,7 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
   function cancelRec() {
     clearInterval(timer.current);
     if (rec.current) { rec.current.cancel(); rec.current = null; }
+    releaseHold();
     setPhase('idle');
   }
 
@@ -250,6 +287,8 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
         }),
         h('p', { class: 'hint mt2' }, '글로 채점하면 발음 평가는 제외됩니다. 녹음 모드에서는 발음·억양도 함께 봅니다.')) : null,
 
+      phase === 'rec' ? h('p', { class: 'hint mt2' }, '녹음 중에는 화면이 자동으로 꺼지지 않게 유지합니다.') : null,
+      warn ? h('p', { class: 'hint mt2', style: 'color:var(--warn)' }, warn) : null,
       err ? h('p', { class: 'hint mt3', style: 'color:#e5484d' }, err) : null),
 
     /* ---- history of gradings for this question */

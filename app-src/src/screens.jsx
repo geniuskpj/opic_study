@@ -388,11 +388,12 @@ export function QuestionDetail({ id, toast, openSettings }) {
           h('div', { class: 'section-head' },
             h('h2', null, '모범 답변'),
             h('div', { class: 'row' },
-              h(IconBtn, { icon: IconPlay, label: '답변 듣기', sm: true, variant: 'bordered', onClick: () => speak(q.ans.replace(/\n/g, ' ')) }),
+                    h(IconBtn, { icon: IconPlay, label: '답변 듣기', sm: true, variant: 'bordered', onClick: () => speak(q.ansFlat || q.ans.replace(/\n/g, ' ')) }),
               h(Btn, { onClick: () => setReveal(!reveal) }, reveal ? '가리기' : '보기'))),
           reveal
             ? h('div', { class: 'card' }, h('div', { class: 'ans' },
-              q.ans.split('\n').filter(Boolean).map((ln, i) => h('span', { key: i, class: 'ln' }, ln)),
+              /* the textbook breaks a line at every phrase; ansFlat joins them into flowing prose */
+              q.ansFlat || q.ans.replace(/\n+/g, ' '),
               q.exKr ? h('p', { class: 'ko t-s dim mt4' }, q.exKr) : null))
             : h('div', { class: 'card', style: 'text-align:center' }, h('p', { class: 'dim t-s' }, '답변을 먼저 말해 본 뒤 확인해 보세요')))
         : h('div', { class: 'section' },

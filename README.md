@@ -34,6 +34,17 @@ Every question you can answer has a recorder — the mock exams (video exams and
 4. the audio is converted **in the page** to 16 kHz mono WAV and sent to Gemini with the question;
    typed answers ("글로 답변") are graded too, minus pronunciation.
 
+**Recording survives the screen locking**: while you record, the app holds a Screen Wake Lock (with a
+looping silent clip as the fallback on browsers without it), so the display no longer turns off and the
+browser no longer mutes the microphone — that muting was why recordings died with the screen off. If
+the mic is still interrupted (another app grabs it, permission is revoked), the take is stopped
+cleanly, saved as a draft and a note explains what happened.
+
+**Model answers read as prose**: the textbook stores an answer broken at every phrase ("I live in /
+Hankook Apartment / in / Seoul"), which looked like a line break every two words. The app ships a
+flattened version (`ansFlat`) that joins the phrases into sentences and one paragraph — the raw phrase
+grouping is still what the markdown documents keep for chunking practice.
+
 **The rubric is cached when the API allows it**: the prompt prefix (rubric + a worked example, which
 also pushes it past Gemini's 1024-token caching minimum) is registered once as a `cachedContents`
 entry and later calls reference that id instead of re-uploading the prompt. Verified against the live

@@ -28,30 +28,48 @@ export function saveAiSettings(patch) {
 export const hasKey = () => !!aiSettings().key;
 
 /* ------------------------------------------------------------------ audio */
-/** Record with MediaRecorder; returns {stop(): Promise<Blob>, cancel(), startedAt}. */
-export function startRecording() {
-  return navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
-    .then((stream) => {
-      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
-      const mime = types.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
-      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-      const chunks = [];
-      mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-      mr.start(250);
-      let startedAt = Date.now();
-      const stopTracks = () => stream.getTracks().forEach((t) => t.stop());
-      return {
-        startedAt,
-        elapsed: () => Date.now() - startedAt,
-        cancel() { try { mr.stop(); } catch (e) {} stopTracks(); },
-        stop() {
-          return new Promise((resolve) => {
-            mr.onstop = () => { stopTracks(); resolve(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); };
-            try { mr.stop(); } catch (e) { stopTracks(); resolve(new Blob(chunks)); }
-          });
-        },
-      };
+/** Record with MediaRecorder.
+ *  Returns { stop(), cancel(), startedAt, elapsed(), track, clear() }.
+ *  `onInterrupt(reason)` fires when the browser mutes or ends the microphone (screen off, another app
+ *  grabbing the audio, permission revoked) so the caller can stop and keep what was captured. */
+export function startRecording({ onInterrupt } = {}) {
+  const constraints = { audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } };
+  return navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+    const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    const mime = types.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+    const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    const chunks = [];
+    mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.start(250);
+
+    const startedAt = Date.now();
+    const stopTracks = () => { try { stream.getTracks().forEach((t) => t.stop()); } catch (e) {} };
+    const track = stream.getAudioTracks()[0] || null;
+
+    let onVis = null;
+    if (onInterrupt) {
+      if (track) {
+        track.onmute = () => onInterrupt('muted');
+        track.onended = () => onInterrupt('ended');
+        track.oninactive = () => onInterrupt('inactive');
+      }
+      onVis = () => { if (document.visibilityState !== 'visible') onInterrupt('hidden'); };
+      document.addEventListener('visibilitychange', onVis);
+    }
+    const clear = () => { if (onVis) document.removeEventListener('visibilitychange', onVis); };
+
+    const finish = () => new Promise((resolve) => {
+      mr.onstop = () => { stopTracks(); resolve(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); };
+      try { mr.stop(); } catch (e) { stopTracks(); resolve(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); }
     });
+
+    return {
+      startedAt, track, clear,
+      elapsed: () => Date.now() - startedAt,
+      stop() { clear(); return finish(); },
+      cancel() { clear(); try { mr.stop(); } catch (e) {} stopTracks(); },
+    };
+  });
 }
 
 /** 16-bit PCM mono WAV from Float32 samples. */
