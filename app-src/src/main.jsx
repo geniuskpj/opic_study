@@ -25,6 +25,23 @@ const navFor = (n) => (n === 'video' || n === 'session' || n === 'topics' || n =
   : n === 'question' || n === 'exam' || n === 'examRun' ? 'questions'
     : n === 'doc' ? 'library' : n);
 
+/* ------------------------------------------------------------------ version check */
+const assetUrl = () => {
+  const el = document.querySelector('script[type="module"][src*="app.js"]');
+  return (el && el.getAttribute('src')) || '';
+};
+export const runningStamp = () => (assetUrl().split('?v=')[1] || '').trim();
+
+/** Ask the server what the current build stamp is (bypassing the HTTP cache with a query). */
+async function deployedStamp() {
+  try {
+    const r = await fetch('index.html?cb=' + Date.now(), { cache: 'no-store' });
+    const html = await r.text();
+    const m = html.match(/assets\/js\/app\.js\?v=([0-9a-f]+)/);
+    return m ? m[1] : null;
+  } catch (e) { return null; }
+}
+
 /* ------------------------------------------------------------------ settings sheet */
 function SettingsSheet({ onClose, onToast }) {
   const s = store.state.settings;
@@ -320,7 +337,7 @@ function App() {
 
 /* ------------------------------------------------------------------ boot */
 function Boot() {
-  const [state, setState] = useState({ phase: 'load', pct: 0, bytes: 0, fromCache: false, error: null, update: null });
+  const [state, setState] = useState({ phase: 'load', pct: 0, bytes: 0, fromCache: false, error: null, update: null, asset: null });
   useEffect(() => {
     (async () => {
       store.load();
@@ -331,6 +348,10 @@ function Boot() {
         /* drop clips whose answer entry no longer exists (e.g. after a manual reset) */
         pruneClips(answers.audioKeys()).catch(() => {});
         setState((s) => ({ ...s, phase: 'ready', fromCache: r.fromCache, bytes: r.bytes }));
+        const mine = runningStamp();
+        deployedStamp().then((d) => {
+          if (d && mine && d !== mine) setState((s) => ({ ...s, asset: d }));
+        });
         checkVersion().then((v) => {
           if (v) {
             setState((s) => ({ ...s, update: v }));
@@ -364,11 +385,20 @@ function Boot() {
   }
 
   return h('div', null,
-    state.update
+    state.asset
       ? h('div', { class: 'banner' },
-        h('span', null, '새 자료가 있습니다'),
-        h(Btn, { onClick: () => { localStorage.removeItem('opic.pack.v2'); location.reload(); } }, '받기'))
-      : null,
+        h('span', null, '새 버전이 있습니다'),
+        h(Btn, {
+          onClick: () => {
+            const url = location.pathname + '?v=' + state.asset + location.hash;
+            location.replace(url);
+          },
+        }, '새로고침'))
+      : state.update
+        ? h('div', { class: 'banner' },
+          h('span', null, '새 자료가 있습니다'),
+          h(Btn, { onClick: () => { localStorage.removeItem('opic.pack.v2'); location.reload(); } }, '받기'))
+        : null,
     h(App, { key: 'app' }));
 }
 
