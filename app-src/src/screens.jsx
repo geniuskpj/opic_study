@@ -6,6 +6,7 @@ import {
 } from './core.js';
 import { go, useStore } from './router.js';
 import { AnswerRecorder, Feedback } from './recorder.jsx';
+import { loadView, saveView, trackScroll, restoreScroll, KEYS } from './viewstate.js';
 import { answers } from './core.js';
 import {
   IconStar, IconStarFill, IconSearch, IconGear, IconChevR, IconBack, IconPlay, IconDoc, IconTimer,
@@ -97,10 +98,13 @@ export function Home({ openSearch, openSettings, toast }) {
 /* ------------------------------------------------------------------ browse (one searchable list) */
 export function Browse({ openSearch }) {
   const st = useStore();
-  const [q, setQ] = useState('');
-  const [src, setSrc] = useState('전체');
-  const [topic, setTopic] = useState('전체');
-  const [limit, setLimit] = useState(80);
+  const saved = loadView(KEYS.browse, { q: '', src: '전체', topic: '전체', limit: 80 });
+  const [q, setQ] = useState(saved.q);
+  const [src, setSrc] = useState(saved.src);
+  const [topic, setTopic] = useState(saved.topic);
+  const [limit, setLimit] = useState(saved.limit || 80);
+  useEffect(() => { saveView(KEYS.browse, { q, src, topic, limit }); }, [q, src, topic, limit]);
+  useEffect(() => trackScroll(KEYS.browse), []);
 
   const topics = useMemo(() => ['전체', ...idx.topicList.map((t) => t.topic)], []);
   const tokens = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -111,6 +115,7 @@ export function Browse({ openSearch }) {
   }), [src, topic, q]);
 
   const counts = progress.counts();
+  useEffect(() => restoreScroll(KEYS.browse, [rows.length]), [rows.length]);
   return h('div', null,
     h(AppBar, {
       title: '문장', sub: `${rows.length}개 표시 · 전체 ${idx.rows.length}개 · 완료 ${counts.done}그룹`,
@@ -248,10 +253,16 @@ let lastList = [];
 
 export function Questions({ openSearch }) {
   const st = useStore();
-  const [seg, setSeg] = useState('all');
-  const [q, setQ] = useState('');
-  const [filter, setFilter] = useState({ type: 'all', topic: 'all' });
+  const saved = loadView(KEYS.questions, { seg: 'all', q: '', filter: { type: 'all', topic: 'all' } });
+  const [seg, setSeg] = useState(saved.seg);
+  const [q, setQ] = useState(saved.q);
+  const [filter, setFilter] = useState(saved.filter || { type: 'all', topic: 'all' });
   const [sheet, setSheet] = useState(false);
+
+  /* remember filters/search so coming back from a question restores the same list,
+     and put the window back at the same offset */
+  useEffect(() => { saveView(KEYS.questions, { seg, q, filter }); }, [seg, q, filter]);
+  useEffect(() => trackScroll(KEYS.questions), []);
 
   const rows = useMemo(() => {
     const nq = q.trim().toLowerCase();
@@ -265,6 +276,8 @@ export function Questions({ openSearch }) {
     });
   }, [seg, q, filter, st.stars.q]);
   lastList = rows.map((r) => r.id);
+  /* restore the previous offset once the filtered list has been laid out */
+  useEffect(() => restoreScroll(KEYS.questions, [rows.length]), [rows.length]);
 
   const byTopic = useMemo(() => {
     const m = new Map();

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
 import {
   loadPack, checkVersion, store, tts, progress, PACK, stars, resetAll, exportUser, importUser,
 } from './core.js';
-import { aiSettings, saveAiSettings, MODEL_CHOICES, hasKey, startRecording, blobToWav, encodeWav } from './score.js';
+import { aiSettings, saveAiSettings, MODEL_CHOICES, hasKey, startRecording, blobToWav, encodeWav, cacheInfo, ensureContextCache, forgetCache } from './score.js';
 import { estimate, clearClips, requestPersist, pruneClips } from './audio-store.js';
 import { answers } from './core.js';
 import {
@@ -140,6 +140,23 @@ function SettingsSheet({ onClose, onToast }) {
       h('span', { class: 'hint' },
         keyState === 'ok' ? '✅ 키가 정상입니다' : keyState === 'bad' ? '❌ 키를 확인하세요'
           : keyState === 'testing' ? '확인 중…' : ai.key ? '키 저장됨' : '키 없음')),
+    h('div', { class: 'row wrap mt2' },
+      h('span', { class: 'hint' }, (() => {
+        const ci = cacheInfo(ai.model);
+        if (ci.name) return `컨텍스트 캐시 사용 중 · ${ci.tokens} tokens · ${Math.round(ci.expiresIn / 60000)}분 남음`;
+        if (ci.unsupported) return `이 모델은 컨텍스트 캐시 미지원 — 루브릭을 매번 전송합니다`;
+        return '컨텍스트 캐시 없음 (첫 채점 때 자동 생성)';
+      })()),
+      h(Btn, {
+        onClick: async () => {
+          setKeyState('testing');
+          const name = await ensureContextCache(ai.model);
+          onToast(name ? '컨텍스트 캐시를 만들었습니다' : '이 모델은 캐시를 지원하지 않습니다');
+          setKeyState(ai.key ? 'saved' : 'none');
+          setStore0({ ...(store0 || {}) });
+        },
+      }, '캐시 만들기'),
+      h(Btn, { onClick: () => { forgetCache(ai.model); onToast('캐시 정보를 지웠습니다'); } }, '캐시 삭제')),
     h('label', { class: 'f mt2' }, '모델'),
     h('select', {
       value: ai.model, onChange: (e) => setAi(saveAiSettings({ model: e.currentTarget.value })),

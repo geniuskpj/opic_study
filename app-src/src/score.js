@@ -6,10 +6,12 @@
  */
 
 const AI_KEY = 'opic.ai.v1';
-export const DEFAULT_MODEL = 'gemini-3.6-flash';
+/* gemini-4-hydrogen is on the free tier and accepts inline audio + JSON mode (verified), so it is
+   the default; the flash family stays available for speed/limits. */
+export const DEFAULT_MODEL = 'gemini-4-hydrogen';
 export const MODEL_CHOICES = [
-  'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.8-flash',
-  'gemini-3.7-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest',
+  'gemini-4-hydrogen', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-flash-latest',
+  'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest',
 ];
 
 export function aiSettings() {
@@ -159,7 +161,107 @@ Return ONLY this JSON (no markdown fences):
  "fillers_used": ["<filler>"]
 }`;
 
-/* ------------------------------------------------------------------ api */
+/** Appended to the rubric ONLY inside an explicitly cached prefix: Gemini requires >=1024 tokens
+ *  to cache, and a worked example plus the filler policy both improve consistency. */
+const RUBRIC_EXTRA = `
+
+WORKED EXAMPLE (follow this shape exactly)
+Question: "Tell me about your favorite cafe. What does it look like, and what do you usually do there?"
+Learner answer: "I go to cafe near my home. It is cozy and quiet. I usually drink latte and talk my friend. The staffs are kind."
+Expected output fragments:
+- function.elements: [{"element":"describe the cafe","status":"covered"},
+  {"element":"what you usually do there","status":"partly"}] and main_gap about the missing routine detail.
+- accuracy.issues: {"quote":"I go to cafe near my home","problem":"가산명사 단수 앞에 관사가 빠졌습니다",
+  "correction":"I go to a cafe near my home","rule_ko":"셀 수 있는 명사 단수형에는 a/an 또는 the가 필요합니다"},
+  {"quote":"talk my friend","problem":"talk는 자동사라 목적어 앞에 전치사가 필요합니다",
+  "correction":"talk with my friend","rule_ko":"talk to/with + 사람 형태로 씁니다"},
+  {"quote":"The staffs are kind","problem":"staff는 집합명사로 복수형을 쓰지 않습니다",
+  "correction":"The staff are kind","rule_ko":"staff, police 등은 단수형 그대로 복수 취급합니다"}.
+- context.needs: ["매장의 구체적인 모습", "방문 빈도나 시간대"] (never invent these for the learner).
+- text_type: type "description", issues about missing closing sentence and the repeated "I ..." openings.
+- level_estimate: IM2 with a reason tied to the lack of specific detail.
+- corrected_answer: uses ONLY the cafe, the cozy/quiet impression, the latte, the friend and the kind staff.
+- next_structure: ["which cafe and where", "what it looks like", "my usual routine there", "why I keep going"]
+
+STYLE RULES
+- Every comment must point at a quoted phrase, an omitted question element or another identifiable feature.
+- No generic praise, no invented biography, no stylistic rewrites of correct English.
+- Keep the Korean explanations short and practical: what is wrong, the fix, the rule.
+- If the answer is short (<20 seconds of speech), say so in F and explain the length target for the level.
+- Prefer 6-12 accuracy issues at most: the ones that matter, ordered by impact.`;
+/* ------------------------------------------------------------------ context cache */
+const CACHE_STATE = 'opic.ai.cache.v1';
+const TTL_MS = 3600 * 1000;
+
+function cacheState() {
+  try { return JSON.parse(localStorage.getItem(CACHE_STATE) || '{}') || {}; }
+  catch (e) { return {}; }
+}
+function saveCacheState(st) { try { localStorage.setItem(CACHE_STATE, JSON.stringify(st)); } catch (e) {} }
+
+export function cacheInfo(model) {
+  const st = cacheState();
+  const cur = (st.active || {})[model];
+  return {
+    name: cur && cur.exp > Date.now() ? cur.name : null,
+    tokens: cur ? cur.tokens : 0,
+    expiresIn: cur ? Math.max(0, cur.exp - Date.now()) : 0,
+    unsupported: ((st.unsupported || {})[model]) || null,
+  };
+}
+
+export function forgetCache(model) {
+  const st = cacheState();
+  if (st.active) delete st.active[model];
+  if (st.unsupported) delete st.unsupported[model];
+  saveCacheState(st);
+}
+
+/** Create (or reuse) an explicit cache for the rubric and return "cachedContents/…" or null.
+ *  Models that cannot cache (gemini-4-hydrogen) or whose prefix is under the 1024-token minimum are
+ *  remembered as unsupported so we never pay for a failing call twice. */
+export async function ensureContextCache(model) {
+  const { key } = aiSettings();
+  if (!key) return null;
+  const st = cacheState();
+  st.active = st.active || {}; st.unsupported = st.unsupported || {};
+  if (st.unsupported[model]) return null;
+  const cur = st.active[model];
+  if (cur && cur.exp > Date.now() + 60000) return cur.name;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${encodeURIComponent(key)}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: `models/${model}`,
+        systemInstruction: { parts: [{ text: RUBRIC + RUBRIC_EXTRA }] },
+        ttl: '3600s', displayName: 'opic-fact-rubric',
+      }),
+    });
+  } catch (e) { return null; }
+  if (!res.ok) {
+    let msg = '';
+    try { msg = ((await res.json()).error || {}).message || ''; } catch (e) { /* ignore */ }
+    if (/not supported|too small|not available|permission|invalid/i.test(msg)) {
+      st.unsupported[model] = msg.slice(0, 140);
+      delete st.active[model];
+      saveCacheState(st);
+    }
+    return null;
+  }
+  const j = await res.json();
+  const ttl = String(j.ttl || '3600s').replace('s', '');
+  st.active[model] = {
+    name: j.name, tokens: (j.usageMetadata || {}).totalTokenCount || 0,
+    exp: Date.now() + Math.min(TTL_MS, (Number(ttl) || 3600) * 1000),
+  };
+  delete st.unsupported[model];
+  saveCacheState(st);
+  return j.name;
+}
+
 async function post(model, key, body) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -193,25 +295,49 @@ export async function scoreAnswer({ wavBytes, question, examTitle, topic, level,
     transcriptHint ? `LEARNER'S TYPED ANSWER:\n${transcriptHint}` : '',
   ].filter(Boolean).join('\n');
 
-  const body = {
-    systemInstruction: { parts: [{ text: RUBRIC }] },
-    contents: [{
-      role: 'user',
-      parts: [
-        { text: context },
-        ...(wavBytes ? [{ inline_data: { mime_type: 'audio/wav', data: bytesToBase64(wavBytes) } }] : []),
-      ],
-    }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 8192, responseMimeType: 'application/json' },
-  };
-  const data = await post(model, key, body);
+  const contents = [{
+    role: 'user',
+    parts: [
+      { text: context },
+      ...(wavBytes ? [{ inline_data: { mime_type: 'audio/wav', data: bytesToBase64(wavBytes) } }] : []),
+    ],
+  }];
+  const generationConfig = { temperature: 0.3, maxOutputTokens: 8192, responseMimeType: 'application/json' };
+
+  /* the rubric is the same on every request: send it once as a cached prefix and reference its id,
+     so later calls skip the prefill. Models without explicit caching get it inline. */
+  let cacheName = await ensureContextCache(model);
+  const run = (cached) => post(model, key, cached
+    ? { cachedContent: cached, contents, generationConfig }
+    : { systemInstruction: { parts: [{ text: RUBRIC }] }, contents, generationConfig });
+
+  let data;
+  try {
+    data = await run(cacheName);
+  } catch (e) {
+    if (cacheName && /cached content|not found|expired|invalid/i.test(String(e.message))) {
+      forgetCache(model);                      // the cache expired server-side: retry inline
+      cacheName = null;
+      data = await run(null);
+    } else throw e;
+  }
   const cand = (data.candidates || [])[0] || {};
   const text = (cand.content && cand.content.parts || []).map((p) => p.text || '').join('');
-  if (!text) throw new Error('응답이 비어 있습니다 (finishReason: ' + (cand.finishReason || '?') + ')');
+  if (!text) {
+    throw new Error(cand.finishReason === 'MAX_TOKENS'
+      ? '응답이 토큰 한도에서 잘렸습니다 — 더 큰 출력 한도가 필요합니다 (finishReason: MAX_TOKENS)'
+      : '응답이 비어 있습니다 (finishReason: ' + (cand.finishReason || '?') + ')');
+  }
   const clean = text.replace(/^```(?:json)?/m, '').replace(/```\s*$/m, '').trim();
   let parsed;
   try { parsed = JSON.parse(clean); } catch (e) { throw new Error('피드백 형식을 읽을 수 없습니다'); }
   parsed.model = model;
   parsed.at = Date.now();
+  parsed.cache = {
+    used: !!cacheName,
+    name: cacheName || null,
+    cachedTokens: (data.usageMetadata || {}).cachedContentTokenCount || 0,
+    promptTokens: (data.usageMetadata || {}).promptTokenCount || 0,
+  };
   return parsed;
 }
