@@ -28,9 +28,23 @@ Every question you can answer has a recorder — the mock exams (video exams and
 1. press 🎙, answer out loud for as long as you like (an OPIc answer is 1–2 minutes), stop;
 2. play it back, re-record if you want, and press **채점하기** — you can grade question by question,
    there is no need to finish the whole exam first;
-3. you can switch the grading model right there in the recorder (`gemini-3.6-flash` by default);
+3. you can switch the grading model right there in the recorder — `gemini-4-hydrogen` is the
+   default (free tier, verified to accept inline audio + JSON mode), with the flash family as
+   alternatives. Recording again after a grading simply adds a new evaluation to the history;
 4. the audio is converted **in the page** to 16 kHz mono WAV and sent to Gemini with the question;
    typed answers ("글로 답변") are graded too, minus pronunciation.
+
+**The rubric is cached when the API allows it**: the prompt prefix (rubric + a worked example, which
+also pushes it past Gemini's 1024-token caching minimum) is registered once as a `cachedContents`
+entry and later calls reference that id instead of re-uploading the prompt. Verified against the live
+API: `gemini-4-hydrogen` reports *explicit caching is not supported*, and the flash models accept the
+size but the free tier answers `TotalCachedContentStorageTokensPerModelFreeTier limit`. The app
+detects this, remembers it per model, falls back to sending the rubric inline and shows the state in
+Settings and under each feedback block — so it starts using the cache the moment the quota allows.
+
+**List state and scroll survive navigation**: search text, filters and the scroll offset of a list
+(문제, 문장, …) are remembered per tab, so the back button returns you to the same result set and the
+same offset instead of a random position.
 
 **Nothing is lost when you navigate away**: the take is written to IndexedDB the moment you stop
 recording (a draft), and every grading keeps its own clip. Each question keeps a **history** of
