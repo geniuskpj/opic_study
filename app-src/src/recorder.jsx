@@ -236,19 +236,14 @@ export function AnswerRecorder({ examId, examTitle, qid, question, topic, level,
     h('span', { class: 'grow' }),
     h(Btn, { onClick: onOpenSettings }, '키·설정'));
 
-  if (!hasKey()) {
-    return h('div', { class: 'rec' },
-      modelRow,
-      h('div', { class: 'row' },
-        h('div', { class: 'grow' },
-          h('div', { class: 't-b' }, '답변 채점 (Gemini)'),
-          h('div', { class: 'hint' }, '내 Gemini API 키를 설정에 넣으면 녹음한 답변을 채점해 줍니다.')),
-        h(Btn, { variant: 'primary', onClick: onOpenSettings }, '키 설정')));
-  }
+  const noKey = !hasKey();
 
   return h('div', { class: 'col', style: 'gap:12px' },
     h('div', { class: 'rec' },
       modelRow,
+      noKey ? h('div', { class: 'row' },
+        h('span', { class: 'hint grow' }, '녹음은 지금도 저장됩니다 — 채점하려면 Gemini API 키가 필요합니다.'),
+        h(Btn, { variant: 'primary', onClick: onOpenSettings }, '키 설정')) : null,
       h('div', { class: 'row' },
         phase === 'rec'
           ? h('button', { class: 'mic recording', onClick: stopRec, 'aria-label': '녹음 중지' }, h(IconClose, { size: 26 }))
