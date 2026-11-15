@@ -279,9 +279,16 @@ export function Questions({ openSearch }) {
   /* restore the previous offset once the filtered list has been laid out */
   useEffect(() => restoreScroll(KEYS.questions, [rows.length]), [rows.length]);
 
+  /* role-play topics come in numbered variants (공원약속 / 공원약속2): group them by scenario so the
+     same three steps do not look like duplicated rows under two headers */
+  const groupKey = (x) => (x.grp === '롤플레이' ? (x.scenario || x.topic) : x.topic);
   const byTopic = useMemo(() => {
     const m = new Map();
-    for (const r of rows) { if (!m.has(r.topic)) m.set(r.topic, []); m.get(r.topic).push(r); }
+    for (const r of rows) {
+      const k = groupKey(r);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(r);
+    }
     return [...m.entries()];
   }, [rows]);
 
@@ -327,9 +334,12 @@ export function Questions({ openSearch }) {
           h('div', { class: 'grow' },
             h('div', { class: 'row', style: 'gap:6px' },
               h('span', { class: 'rt grow nowrap' }, x.title),
+              x.grp === '롤플레이' && x.topic !== (x.scenario || x.topic)
+                ? h('span', { class: 'badge' }, x.topic) : null,
               (() => { const g = answers.latest('qbank', x.id); return g ? h('span', { class: 'badge' },
                 (g.feedback.level_estimate || {}).band || '채점') : x.ans ? h('span', { class: 'dot' }) : null; })()),
-            h('div', { class: 'rs', style: 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden' }, x.en)),
+            h('div', { class: 'rs', style: 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden' },
+              x.enBody || x.en)),
           h(IconChevR, { size: 18 })))))) ),
 
     sheet ? h(Sheet, {
@@ -373,11 +383,13 @@ export function QuestionDetail({ id, toast, openSettings }) {
       h('div', { class: 'qmeta' },
         h('span', { class: 'badge' }, q.grp), h('span', { class: 'badge' }, q.kind || '-'), q.cat ? h('span', { class: 'badge' }, q.cat) : null,
         q.page ? h('span', { class: 'badge' }, `book p.${q.page}`) : null),
-      h('h1', { class: 't-title en mt3' }, q.en),
+      h('h1', { class: 't-title en mt3' }, q.enBody || q.en),
       h('div', { class: 'row mt2' },
         h(IconBtn, { icon: IconPlay, label: '질문 듣기', variant: 'bordered', sm: true, onClick: () => speak(q.en) }),
-        h('span', { class: 't-cap dim3' }, '질문 듣기')),
-      q.kr ? h('p', { class: 't-s dim ko mt2' }, q.kr) : null,
+        h('span', { class: 't-cap dim3' }, '질문 듣기'),
+        q.enBody && q.enBody !== q.en
+          ? h(Btn, { sm: true, onClick: () => speak(q.en) }, '상황 안내 포함해 듣기') : null),
+      (q.krBody || q.kr) ? h('p', { class: 't-s dim ko mt2' }, q.krBody || q.kr) : null,
       q.focus ? h('div', { class: 'card mt4' },
         h('div', { class: 't-cap dim' }, '핵심 문장'),
         h('div', { class: 'focus mt1' }, h('b', null, q.focus[0])),
@@ -397,9 +409,19 @@ export function QuestionDetail({ id, toast, openSettings }) {
               q.exKr ? h('p', { class: 'ko t-s dim mt4' }, q.exKr) : null))
             : h('div', { class: 'card', style: 'text-align:center' }, h('p', { class: 'dim t-s' }, '답변을 먼저 말해 본 뒤 확인해 보세요')))
         : h('div', { class: 'section' },
-          h('div', { class: 'section-head' }, h('h2', null, '답변 만들기')),
+          h('div', { class: 'section-head' }, h('h2', null, '예시 답변'),
+            h('span', { class: 't-cap dim3' }, q.grp === '롤플레이' ? '이 단계 예시' : '한국어 예시')),
           h('div', { class: 'card' },
-            h('p', { class: 't-s' }, '이 문제에는 모범 답변이 없습니다. 아래 문장 틀을 조합해 직접 만들어 보세요.'),
+            q.focus ? h('div', null,
+              h('div', { class: 't-cap dim' }, '영어 핵심 문장'),
+              h('div', { class: 't-b en mt1' }, q.focus[0]),
+              h('div', { class: 'row mt2' },
+                h(IconBtn, { icon: IconPlay, label: '핵심 문장 듣기', sm: true, variant: 'bordered', onClick: () => speak(q.focus[0]) }),
+                h('span', { class: 'hint' }, '이 문장은 그대로 말하고, 아래 한국어 예시를 영어로 바꿔 이어서 말해 보세요.'))) : null,
+            q.ansKr ? h('div', { class: 'mt3' },
+              h('div', { class: 't-cap dim' }, '이어서 말할 내용 (한국어 예시 · 합쳐진 문장)'),
+              h('p', { class: 't-b ko mt1' }, q.ansKr)) : null,
+            h('p', { class: 'hint mt3' }, '이 문제는 교재 모범 답변이 없어 핵심 문장과 한국어 예시를 합쳐 보여 줍니다.'),
             h('div', { class: 'row mt3' },
               h(Btn, { onClick: () => go('/lib/tpl') }, '템플릿 보기'),
               q.topic ? h(Btn, { onClick: () => go(`/lib/expr?topic=${encodeURIComponent(q.topic)}`) }, `${q.topic} 표현`) : null))),
@@ -412,6 +434,26 @@ export function QuestionDetail({ id, toast, openSettings }) {
           examId: 'qbank', examTitle: `문제집 · ${q.topic}`, qid: q.id, question: q.en,
           topic: q.topic, level: 'IH', onOpenSettings: openSettings,
         })),
+
+      (q.grp === '롤플레이' && (PACK.scenarios || []).find((x) => x.topic === (q.scenario || q.topic)))
+        ? (() => {
+          const sc = PACK.scenarios.find((x) => x.topic === (q.scenario || q.topic));
+          const steps = sc.steps.map((id) => idx.questions.get(id)).filter(Boolean);
+          return h('div', { class: 'section' },
+            h('div', { class: 'section-head' }, h('h2', null, `${sc.topic} 시나리오`),
+              h('span', { class: 't-cap dim3' }, `${steps.length}단계`)),
+            h('div', { class: 'list' }, steps.map((st) => h('button', {
+              key: st.id, class: `rowitem ${st.id === q.id ? 'cur' : ''}`, onClick: () => go(`/q/${st.id}`),
+            },
+              h('span', { class: `dot ${st.id === q.id ? '' : 'muted'}` }),
+              h('div', { class: 'grow' },
+                h('div', { class: 'rt' }, st.title),
+                h('div', { class: 'rs', style: 'display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden' },
+                  st.enBody || st.en))))),
+            h('div', { class: 'card mt3' },
+              h('div', { class: 't-cap dim' }, '시나리오 전체 예시 답변 (한국어, 단계별 예시를 합침)'),
+              h('p', { class: 't-b ko mt1' }, sc.kr)));
+        })() : null,
 
       tpl ? h('div', { class: 'section' },
         h('div', { class: 'section-head' }, h('h2', null, `${q.kind} 유형 문장`)),
