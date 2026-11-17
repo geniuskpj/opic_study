@@ -12,7 +12,7 @@ questions from a Korean OPIc practice site — packaged as one static app that w
 | 홈 | continue where you stopped, groups due for review, today's count, shortcuts |
 | 문장 | **one searchable list of all 365 items** — 59 shadowing phrase groups (296 sentences), 151 선택주제 sentences, 72 master patterns, 83 model answers; filter by source and by OPIc topic (13) |
 | 문제 | 423 past questions (94 with model answers) + **7 video mock exams (98 spoken questions, transcribed)** + the book's 34 exam sets — every mock-exam question can be answered, recorded and **graded by Gemini** |
-| 자료 | 50 topics of expressions, answer templates, and 12 markdown documents |
+| 자료 | 50 topics of expressions, answer templates, and 13 markdown documents — incl. the **AL strategy guide** (transitions · tense · plurals · articles, answer playbooks, topic cards) |
 | ★ 저장 | starred sentences, questions and expressions (Settings exports/imports them) |
 
 The core screen is the **shadowing session**: one phrase group at a time, the sentences stacked
@@ -103,7 +103,8 @@ assets/js/app.css          stylesheet (14 KB), design tokens in :root
 data/study-pack.json       the study pack, downloaded once
 data/docs.json             pre-rendered markdown documents
 data/version.json          version + size + counts
-md/*.md                    markdown documents (incl. mock-exams.md, kangjiwan-material.md)
+md/*.md                    markdown documents (incl. mock-exams.md, kangjiwan-material.md,
+                           opic-al-strategy.md — grammar/strategy guide, hand-authored)
 sw.js                      offline cache (network-first everywhere, cache as offline fallback)
 app-src/                   source: src/*.jsx, src/style.css, build.mjs
 ```
