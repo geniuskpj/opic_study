@@ -25,7 +25,8 @@ fs.mkdirSync(path.join(OUT, 'assets', 'js'), { recursive: true });
 // ---------------------------------------------------------------- markdown -> json
 // Rendering at build time keeps a parser out of the browser bundle.
 function mdToHtml(md) {
-  const lines = md.split('\n');
+  // normalize CRLF first: a \r left on a line breaks the heading/HR regexes (## 1. …\r renders as a paragraph)
+  const lines = md.replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const inline = (s) => esc(s)
@@ -69,7 +70,12 @@ function buildDocs() {
   }
   const files = fs.readdirSync(mdDir).filter((f) => f.endsWith('.md'));
   const docs = files.map((f) => {
-    const html = mdToHtml(fs.readFileSync(path.join(mdDir, f), 'utf8'));
+    // wrap tables in a scroll container (.tblwrap) and split the doc into h2 section cards (.mdsec):
+    // a 40KB guide as one flat article reads like a wall — cards make each section scannable
+    const html = '<section class="mdsec">' + mdToHtml(fs.readFileSync(path.join(mdDir, f), 'utf8'))
+      .replace(/<table>/g, '<div class="tblwrap"><table>')
+      .replace(/<\/table>/g, '</table></div>')
+      .replace(/<h2>/g, '</section><section class="mdsec"><h2>') + '</section>';
     const title = (html.match(/<h1>([^<]+)<\/h1>/) || [, f])[1];
     const headings = [...html.matchAll(/<h2>([^<]+)<\/h2>/g)].map((m) => m[1]);
     return { file: f, title, headings, html, bytes: html.length };

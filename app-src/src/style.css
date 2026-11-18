@@ -269,17 +269,43 @@ th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--bor
 th { color: var(--text-2); font-size: 12px; font-weight: 700; background: var(--surface-2); }
 tr:last-child td { border-bottom: 0; }
 
-.md { font-size: 17px; line-height: 28px; }
+/* doc reader — mobile-first, token-only (dark mode safe).
+   build.mjs splits the doc into <section class="mdsec"> cards at every h2. */
+.md { font-size: 16.5px; line-height: 27px; min-width: 0; max-width: 100%; overflow-wrap: break-word; display: flex; flex-direction: column; gap: var(--s4); }
+.md .mdsec { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: var(--s4); }
+.md .mdsec > :first-child { margin-top: 0; }
+.md .mdsec > :last-child { margin-bottom: 0; }
+.md > .mdsec:first-child { border: 0; padding: 0 0 var(--s2); } /* the h1 + intro block: no card chrome */
+.md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; scroll-margin-top: calc(var(--appbar) + 8px); }
 .md h1 { font-size: 22px; line-height: 30px; margin: var(--s4) 0 var(--s3); }
-.md h2 { font-size: 19px; line-height: 27px; margin: var(--s6) 0 var(--s2); padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-.md h3 { font-size: 16.5px; line-height: 24px; margin: var(--s4) 0 var(--s2); }
-.md ul, .md ol { padding-left: 20px; }
-.md li { margin: 4px 0; word-break: keep-all; }
-.md code { font-family: var(--mono); font-size: 14px; background: var(--surface-2); padding: 1px 5px; border-radius: var(--r-xs); }
+.md h2 { font-size: 19px; line-height: 27px; margin: 0 0 var(--s3); padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.md h3 { font-size: 16px; line-height: 23px; margin: var(--s5) 0 var(--s2); }
+.md h3::before { content: ""; display: inline-block; width: 4px; height: 0.95em; margin-right: 8px; border-radius: 2px; background: var(--accent); vertical-align: -0.12em; }
+.md h4 { font-size: 13px; line-height: 20px; margin: var(--s4) 0 var(--s2); color: var(--text-2); letter-spacing: 0.04em; text-transform: uppercase; }
+.md p { margin: var(--s4) 0; }
+.md ul, .md ol { padding-left: 22px; margin: var(--s3) 0; }
+.md li { margin: 8px 0; word-break: keep-all; overflow-wrap: break-word; }
+.md li::marker { color: var(--text-3); }
+.md a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.md strong { font-weight: 700; color: var(--text); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.md code { font-family: var(--mono); font-size: 14px; background: var(--surface-2); padding: 1px 5px; border-radius: var(--r-xs); overflow-wrap: anywhere; }
 .md blockquote { margin: var(--s3) 0; padding: var(--s2) var(--s4); border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--text-2); }
-.md table { font-size: 14px; }
-.md .tbl { border: 1px solid var(--border); border-radius: var(--r-sm); }
 .md hr { border: 0; border-top: 1px solid var(--border); margin: var(--s6) 0; }
+
+/* tables: card + horizontal scroll + pinned first column.
+   requires <div class="tblwrap"> around <table> (build.mjs adds it). */
+.md .tblwrap { margin: var(--s4) 0; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+.md table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 15px; line-height: 22px; }
+.md th, .md td { padding: 10px 12px; text-align: left; vertical-align: top; background: var(--surface); border-bottom: 1px solid var(--border); min-width: 200px; word-break: keep-all; overflow-wrap: break-word; }
+.md th + th, .md td + td { border-left: 1px solid var(--border); }
+.md tbody tr:last-child > td { border-bottom: 0; }
+.md th { background: var(--surface-3); color: var(--text-2); font-size: 12.5px; line-height: 18px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; border-bottom: 2px solid var(--border); }
+.md tbody tr:nth-child(even) > td { background: var(--surface-2); }
+.md th:first-child, .md td:first-child { min-width: 88px; max-width: 150px; position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--border); }
+.md th:first-child { z-index: 2; }
+.md td:first-child { font-weight: 600; color: var(--text); }
+.md td strong { color: var(--accent); }
+.md td code { font-size: 13px; }
 
 .toc { display: flex; flex-direction: column; gap: 2px; }
 .toc button { text-align: left; background: none; border: 0; color: var(--text-2); padding: 8px 0; font-size: 15px; cursor: pointer; }
