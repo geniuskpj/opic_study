@@ -45,9 +45,9 @@ will hear in THAT answer. Do not recite scripts word-for-word; drill the structu
 
 ## 2. Transitions (전환어) — priority 1
 
-Connectors are a scored AL feature. Learn them by FUNCTION. **[core]** = memorize first · **[extra]** = use
-when it fits. Pick 2–3 per function and use them in every answer until they are automatic.
-Written-register words (thus, therefore, in addition…) — see 2.17.
+Connectors are a scored AL feature. Learn them by FUNCTION — pick 2–3 per function and use them in
+every answer until they are automatic. Rows appear in drill order (must-know first).
+Written-register words (thus, therefore, in addition…) — see 2.18.
 
 ### 2.1 Starting
 
@@ -87,10 +87,78 @@ Written-register words (thus, therefore, in addition…) — see 2.17.
 
 - **So that's basically** how/why ~ · **Anyway**, that's my routine.
 - **Overall**, I really enjoy ~ing. · **Personally**, I find it relaxing.
-- **That's why** I enjoy ~ing so much. / **That's why** ~ing has become an important part of my life.
 - **For me**, ~ is a great way to relax.
+- ⚠ rotate closers — never the same one twice in a set (the bank in 2.6 exists for that).
+- ⚠ "relieve stress" is the most overused closer line — swap it: **clear my head / unwind / hit the reset button**.
 
-### 2.6 Referring back inside a combo set (콤보 연결)
+### 2.6 Natural endings — closing bank (by answer type)
+
+One compound sentence (10–15 words) is enough to close. Drop **one** crisp line, let your voice fall at
+the end, click Next. Never reuse the same closer across a set.
+
+**Habit / description answers**
+
+| Line | Filled example |
+|---|---|
+| **Honestly, my ~ just doesn't feel complete without ___.** | Honestly, my weekend just doesn't feel complete without sitting at my local cafe with an iced Frappuccino. |
+| **It's basically how I hit the reset button after a long ___.** | The gym right after work is basically how I hit the reset button and leave all my stress behind. |
+| **It's nothing fancy, but it's easily the best part of my ___.** | Evening walks in the park are nothing fancy, but they're easily the best part of my day. |
+| **I don't see myself giving this up anytime soon.** | Even when I'm exhausted, I always read a few pages before bed — I don't see myself giving that up anytime soon. |
+| **So yeah, that's pretty much what my typical ___ looks like.** | Grabbing a book and zoning out on public transit is pretty much what my daily commute looks like. |
+
+**Past experience answers**
+
+| Line | Filled example |
+|---|---|
+| **Looking back, it still stands out as one of the best decisions I've made.** | Signing up for that reading club on a whim still stands out as one of the best decisions I've made this year. |
+| **It was a total mess at the time, but hey — at least I got a good story out of it.** | Getting lost in China was stressful at the time, but hey, at least I got a great story out of it. |
+| **We still talk about it all the time — I'd do it all over again in a heartbeat.** | My friends and I still talk about that trip all the time, and I'd do it all over again in a heartbeat. |
+| **That experience really changed the way I look at ___.** | That trip really changed the way I look at traveling — I never miss my workout now, even on vacation. |
+| **I haven't been back since, but it's at the top of my list.** | I haven't been back to China since, but going back is at the top of my list for next year. |
+
+**Comparison (past ↔ now) answers**
+
+| Line | Filled example |
+|---|---|
+| **I'm so glad I made the switch — I can't imagine going back.** | I'm so glad I traded late-night TV for reading; I can't imagine going back to my old routine. |
+| **The difference is just night and day.** | Since I started working out regularly, the difference in my energy is just night and day. |
+| **I guess my priorities have shifted as I've gotten older.** | I used to love crowded downtown spots — now I just want a quiet park. I guess my priorities have shifted a bit. |
+| **It took some getting used to, but now it's second nature.** | Sorting the recycling took some getting used to, but now it's just second nature. |
+| **Both have their perks, but ~ suits me way better now.** | Driving had its perks, of course, but reading on the subway suits my life way better now. |
+
+**Opinion / technology answers**
+
+| Line | Filled example |
+|---|---|
+| **At the end of the day, it all comes down to ___.** | My phone makes life super convenient, sure — but at the end of the day, it comes down to knowing when to unplug. |
+| **I hate to admit it, but I'd be lost without ___.** | I hate to admit it, but without the map apps on my phone, I'd be completely lost in a new city. |
+| **It's wild how fast things are changing — I'm curious where we'll be in five years.** | It's wild how fast tech is changing — I'm curious to see where we'll be in five years. |
+| **For better or worse, it's a huge part of life now.** | For better or worse, it's a huge part of life now — so we might as well make the most of it. |
+
+**Recommendation closers (talk to the interviewer like a person)**
+
+| Line | Filled example |
+|---|---|
+| **If you ever find yourself in ___, you owe it to yourself to ___.** | If you ever find yourself in Korea in spring, you owe it to yourself to spend a few days in Jeju. |
+| **Give it a shot sometime — you might be surprised.** | If you haven't joined a reading club, give it a shot sometime — you might be surprised how much you get into it. |
+| **Take my word for it: skip ___, go straight for ___.** | Take my word for it: skip the regular coffee and go straight for the Vanilla Cream Cold Brew. |
+
+**Time-up / graceful exit**
+
+| Line | Filled example |
+|---|---|
+| **Anyway, I could go on and on about this, but that's the gist of it.** | Anyway, I could go on and on about my gym routine, but that's the gist of it. |
+| **So yeah — that's pretty much the whole story.** | We made our flight back with five minutes to spare — so yeah, that's pretty much the whole story. |
+| **And yeah… that's about all there is to say on that.** | Recycling here is a bit of a chore, for sure — and yeah, that's about all there is to say on that. |
+| **I feel like I'm rambling, so I'll leave it at that.** | There are a million other reasons I love public transit, but I feel like I'm rambling, so I'll leave it at that. |
+
+**Three closers to avoid (they scream "memorized script")**
+
+1. "**In conclusion / To sum up**" — nobody says that in a conversation.
+2. "**It helps me relieve my stress**" as every ending — swap: **clear my head / unwind / hit the reset button**.
+3. "**Thank you for listening to my story.**" — you're chatting with the interviewer, not giving a speech.
+
+### 2.7 Referring back inside a combo set (콤보 연결)
 
 Combo questions are RELATED — a callback shows discourse control. Use it when it fits naturally.
 
@@ -101,105 +169,105 @@ Combo questions are RELATED — a callback shows discourse control. Use it when 
 - **To build on what I just said**, ~
 - **The same thing happened when** ~
 
-### 2.7 Hard question / stalling
+### 2.8 Hard question / stalling
 
 - **Wow**, that's quite a tough question. / I didn't expect such a hard question.
 - **Let me think for a second…** / How should I put this…
 - **As far as I know**, ~ (when you're not sure)
 
-### 2.8 돌발 (unexpected) / framing
+### 2.9 돌발 (unexpected) / framing
 
 - **To tell you the truth**, ~ · **Here in Korea**, ~ · **People often say that** ~
 - **The bottom line is that** ~ · **This is crucial** because ~
 - **The good/best thing is that** ~ · **The reason is/was that** ~ (= because)
 
-### 2.9 Adding information / giving examples
+### 2.10 Adding information / giving examples
 
 | Transition | Example |
 |---|---|
-| **[core] For example / For instance** | I try to exercise in small ways; for instance, I take the stairs instead of the elevator. |
-| **[core] Such as** | I like reading books about travel, such as stories about people exploring China. |
-| **[core] Besides** | I like that cafe because it's quiet, and besides, it's close to my apartment. |
-| **[core] On top of that** | The gym is affordable, and on top of that, it's open late. |
-| **[core] Another thing is…** | Another thing is, the cafe staff always remember my usual Frappuccino order. |
-| **[core] Plus** | The reading club meets twice a month — plus, we chat online between meetings. |
-| **[extra] What's more** | The park is close to my place, and what's more, it's rarely crowded in the morning. |
+| **For example / For instance** | I try to exercise in small ways; for instance, I take the stairs instead of the elevator. |
+| **Such as** | I like reading books about travel, such as stories about people exploring China. |
+| **Besides** | I like that cafe because it's quiet, and besides, it's close to my apartment. |
+| **On top of that** | The gym is affordable, and on top of that, it's open late. |
+| **Another thing is…** | Another thing is, the cafe staff always remember my usual Frappuccino order. |
+| **Plus** | The reading club meets twice a month — plus, we chat online between meetings. |
+| **What's more** | The park is close to my place, and what's more, it's rarely crowded in the morning. |
 
-### 2.10 Cause & result
-
-| Transition | Example |
-|---|---|
-| **[core] So** | It started raining during my Jeju trip, so I ducked into a cafe. |
-| **[core] That's why** (already collected) | I spend a lot of time looking at screens, and that's why I like taking walks in the park. |
-| **[core] Because of that** | The subway was delayed, and because of that, I was late for my reading club. |
-| **[core] Thanks to + noun** | Thanks to my phone's translation app, ordering food in China was much easier. |
-| **[core] Which is why** | My neighborhood is really walkable, which is why I don't use my car very often. |
-| **[extra] As a result** | I started working out regularly, and as a result, I have more energy during the day. |
-| **[extra · written] Due to + noun** | Due to the heavy rain, we changed our plans — spoken: **because of** the heavy rain |
-
-### 2.11 Sequence / time — extended bank (extends 2.4)
+### 2.11 Cause & result
 
 | Transition | Example |
 |---|---|
-| **[core] Then** | We grabbed coffee, and then we went for a walk around the park. |
-| **[core] After that** | I visited a market in China, and after that, I tried some local street food. |
-| **[core] Eventually** | I got lost in Jeju, but eventually, I found my way back to the hotel. |
-| **[core] Finally** | After checking a few different cafes, I finally found one with an open table. |
-| **[complication] All of a sudden** | I was walking in the park when, all of a sudden, it started pouring. |
-| **[core] The next thing I knew…** | I fell asleep on the bus, and the next thing I knew, I'd missed my stop. |
-| **[extra] Afterward** | I worked out at the gym and grabbed a smoothie afterward. |
-| **[extra] In the meantime** | My friend was running late, so in the meantime, I ordered a Frappuccino. |
-| **[complication] Out of the blue** | Out of the blue, a friend from my reading club invited me to join her on a trip to Jeju. |
+| **So** | It started raining during my Jeju trip, so I ducked into a cafe. |
+| **That's why** (already collected) | I spend a lot of time looking at screens, and that's why I like taking walks in the park. |
+| **Because of that** | The subway was delayed, and because of that, I was late for my reading club. |
+| **Thanks to + noun** | Thanks to my phone's translation app, ordering food in China was much easier. |
+| **Which is why** | My neighborhood is really walkable, which is why I don't use my car very often. |
+| **As a result** | I started working out regularly, and as a result, I have more energy during the day. |
+| **Due to + noun** | Due to the heavy rain, we changed our plans — spoken: **because of** the heavy rain |
 
-### 2.12 Emphasis
+### 2.12 Sequence / time — extended bank (extends 2.4)
 
 | Transition | Example |
 |---|---|
-| **[core] Actually** (counter-expectation) | I actually enjoy taking the subway, because I can read during the ride. |
-| **[core] In fact** | I go to that cafe all the time; in fact, I was there just yesterday. |
-| **[core] The thing is…** | The thing is, my gym gets so crowded after work that I prefer going in the morning. |
-| **[core] What's really + adjective + is…** | What's really nice about my neighborhood is that there's a park just around the corner. |
-| **[extra] Believe it or not** | Believe it or not, I finished a whole book on the flight to China. |
+| **Then** | We grabbed coffee, and then we went for a walk around the park. |
+| **After that** | I visited a market in China, and after that, I tried some local street food. |
+| **Eventually** | I got lost in Jeju, but eventually, I found my way back to the hotel. |
+| **Finally** | After checking a few different cafes, I finally found one with an open table. |
+| **All of a sudden** | I was walking in the park when, all of a sudden, it started pouring. |
+| **The next thing I knew…** | I fell asleep on the bus, and the next thing I knew, I'd missed my stop. |
+| **Afterward** | I worked out at the gym and grabbed a smoothie afterward. |
+| **In the meantime** | My friend was running late, so in the meantime, I ordered a Frappuccino. |
+| **Out of the blue** | Out of the blue, a friend from my reading club invited me to join her on a trip to Jeju. |
 
-### 2.13 Concession — "I know, but…"
-
-| Transition | Example |
-|---|---|
-| **[core] Even though** | Even though it rained in Jeju, I still had a great trip. |
-| **[core] Still** | The subway was crowded, but it was still faster than driving. |
-| **[core] I know, but…** | The gym is pretty expensive — I know, but I use it almost every day. |
-| **[extra] Having said that** | The gym can get crowded; having said that, the equipment is great. |
-| **[extra] That said** | I love my phone; that said, I probably spend too much time on it. |
-| **[extra] Even so** | The cafe was packed; even so, we managed to find a table. |
-
-### 2.14 Saying it another way
+### 2.13 Emphasis
 
 | Transition | Example |
 |---|---|
-| **[core] What I mean is…** | I like cafes with character; what I mean is, I prefer places that feel cozy and personal. |
-| **[core] Basically** | I follow all the building's waste rules; basically, I sort my recycling at home and take it downstairs once a week. |
-| **[extra] In other words** | My phone is my travel guide; in other words, I use it for maps, translations, and restaurant recommendations. |
-| **[extra] To put it another way** | The reading club keeps me motivated; to put it another way, it gives me a reason to finish books. |
+| **Actually** (counter-expectation) | I actually enjoy taking the subway, because I can read during the ride. |
+| **In fact** | I go to that cafe all the time; in fact, I was there just yesterday. |
+| **The thing is…** | The thing is, my gym gets so crowded after work that I prefer going in the morning. |
+| **What's really + adjective + is…** | What's really nice about my neighborhood is that there's a park just around the corner. |
+| **Believe it or not** | Believe it or not, I finished a whole book on the flight to China. |
 
-### 2.15 Shifting to a related point
-
-| Transition | Example |
-|---|---|
-| **[core] Speaking of which** | I love walking in the park. Speaking of the park, there's a great cafe right next to it. |
-| **[core] When it comes to…** | When it comes to working out, I prefer going in the morning. |
-| **[core] In terms of…** | In terms of public transit, my neighborhood is really convenient. |
-| **[core] As for…** | As for my favorite drink, I usually go for a Frappuccino. |
-
-### 2.16 Condition / hypothetical
+### 2.14 Concession — "I know, but…"
 
 | Transition | Example |
 |---|---|
-| **[core] If I had to choose…** | If I had to choose, I'd visit Jeju again rather than go somewhere new. |
-| **[core] If I get the chance…** | If I get the chance, I'd love to visit China again. |
-| **[core] As long as…** | As long as the weather's nice, I'll walk to the park. |
-| **[core] Unless…** | I take the subway unless I'm carrying something really heavy. |
+| **Even though** | Even though it rained in Jeju, I still had a great trip. |
+| **Still** | The subway was crowded, but it was still faster than driving. |
+| **I know, but…** | The gym is pretty expensive — I know, but I use it almost every day. |
+| **Having said that** | The gym can get crowded; having said that, the equipment is great. |
+| **That said** | I love my phone; that said, I probably spend too much time on it. |
+| **Even so** | The cafe was packed; even so, we managed to find a table. |
 
-### 2.17 Formal words — thus, therefore, hence, moreover, nevertheless
+### 2.15 Saying it another way
+
+| Transition | Example |
+|---|---|
+| **What I mean is…** | I like cafes with character; what I mean is, I prefer places that feel cozy and personal. |
+| **Basically** | I follow all the building's waste rules; basically, I sort my recycling at home and take it downstairs once a week. |
+| **In other words** | My phone is my travel guide; in other words, I use it for maps, translations, and restaurant recommendations. |
+| **To put it another way** | The reading club keeps me motivated; to put it another way, it gives me a reason to finish books. |
+
+### 2.16 Shifting to a related point
+
+| Transition | Example |
+|---|---|
+| **Speaking of which** | I love walking in the park. Speaking of the park, there's a great cafe right next to it. |
+| **When it comes to…** | When it comes to working out, I prefer going in the morning. |
+| **In terms of…** | In terms of public transit, my neighborhood is really convenient. |
+| **As for…** | As for my favorite drink, I usually go for a Frappuccino. |
+
+### 2.17 Condition / hypothetical
+
+| Transition | Example |
+|---|---|
+| **If I had to choose…** | If I had to choose, I'd visit Jeju again rather than go somewhere new. |
+| **If I get the chance…** | If I get the chance, I'd love to visit China again. |
+| **As long as…** | As long as the weather's nice, I'll walk to the park. |
+| **Unless…** | I take the subway unless I'm carrying something really heavy. |
+
+### 2.18 Formal words — thus, therefore, hence, moreover, nevertheless
 
 These are correct but sound **essay-like spoken out loud**. Use sparingly — the spoken alternative is
 easier to say and scores the same.
@@ -212,55 +280,55 @@ easier to say and scores the same.
 | moreover | on top of that | The cafe is quiet; moreover, it's close to my apartment. |
 | nevertheless | still / even so | It rained during our Jeju trip; nevertheless, we had a great time. |
 
-### 2.18 Master review drill (patterns from 2.10–2.16 + new frames)
+### 2.19 Master review drill (patterns from 2.11–2.17 + new frames)
 
 | Pattern | Filled example |
 |---|---|
-| **[core] When it comes to ___, I ___.** | When it comes to coffee, I usually order a Frappuccino. |
-| **[core] The more ___, the more ___.** | The more I read, the more I want to discuss books with other people. |
-| **[core] It depends on ___, but usually ___.** | It depends on the weather, but usually I walk to the park after dinner. |
-| **[core] If I had to choose, I'd ___.** | If I had to choose, I'd take the subway instead of driving. |
-| **[core] Speaking of ___, ___.** | Speaking of Jeju, I'd love to go back and explore more of the island. |
-| **[core] In terms of ___, ___.** | In terms of recycling, my apartment building makes it pretty easy. |
-| **[core] What I love about ___ is ___.** | What I love about my neighborhood is that everything I need is within walking distance. |
-| **[core] ___, which is why ___.** | I wanted to try local food in China, which is why I visited a street market. |
-| **[extra] Not only ___, but ___ too.** | Not only is my gym close to home, but it's affordable too. |
-| **[extra] Having said that, ___.** | My phone is really useful. Having said that, I try not to use it during meals. |
+| **When it comes to ___, I ___.** | When it comes to coffee, I usually order a Frappuccino. |
+| **The more ___, the more ___.** | The more I read, the more I want to discuss books with other people. |
+| **It depends on ___, but usually ___.** | It depends on the weather, but usually I walk to the park after dinner. |
+| **If I had to choose, I'd ___.** | If I had to choose, I'd take the subway instead of driving. |
+| **Speaking of ___, ___.** | Speaking of Jeju, I'd love to go back and explore more of the island. |
+| **In terms of ___, ___.** | In terms of recycling, my apartment building makes it pretty easy. |
+| **What I love about ___ is ___.** | What I love about my neighborhood is that everything I need is within walking distance. |
+| **___, which is why ___.** | I wanted to try local food in China, which is why I visited a street market. |
+| **Not only ___, but ___ too.** | Not only is my gym close to home, but it's affordable too. |
+| **Having said that, ___.** | My phone is really useful. Having said that, I try not to use it during meals. |
 
 
-### 2.19 A/B contrast (two things, not past/present)
-
-| Transition | Example |
-|---|---|
-| **[core] On the other hand**, ~ | The subway is crowded. On the other hand, it's cheap and always on time. |
-| **[core] Whereas** ~, ~ | I used to drive everywhere, whereas now I read on the bus. |
-| **[core] Unlike** ~, ~ | Unlike my old neighborhood, everything here is walkable. |
-| **[extra] Compared with** ~, ~ | Compared with my old phone, this one is huge. |
-
-### 2.20 Complication — the AL key
+### 2.20 A/B contrast (two things, not past/present)
 
 | Transition | Example |
 |---|---|
-| **[core] Unfortunately**, ~ | Unfortunately, the cafe was full when we got there. |
-| **[core] To make matters worse**, ~ | The bus was late, and to make matters worse, it started raining. |
-| **[core] Luckily / It turned out that** ~ | Luckily, my friend knew a place nearby. / It turned out that the show was canceled. |
-| **[core] I had no idea what to do** | At first, I had no idea what to do. |
+| **On the other hand**, ~ | The subway is crowded. On the other hand, it's cheap and always on time. |
+| **Whereas** ~, ~ | I used to drive everywhere, whereas now I read on the bus. |
+| **Unlike** ~, ~ | Unlike my old neighborhood, everything here is walkable. |
+| **Compared with** ~, ~ | Compared with my old phone, this one is huge. |
 
-### 2.21 Listing (advantages / reasons)
-
-| Transition | Example |
-|---|---|
-| **[core] First of all, ~ / Second, ~ / Lastly, ~** | First of all, it's close to my place. Second, the price is fair. |
-| **[core] One advantage is ~; another is ~** | One advantage is convenience; another is the price. |
-
-### 2.22 Opinion + future (IHU15 / plans)
+### 2.21 Complication — the AL key
 
 | Transition | Example |
 |---|---|
-| **[core] In my opinion, ~** | In my opinion, reading is the best habit you can build. |
-| **[core] I tend to think ~** | I tend to think technology does more good than harm. |
-| **[core] A lot of people say ~, but I ~** | A lot of people say gyms are boring, but I enjoy mine. |
-| **[core] I'm planning to ~ / I'm going to ~** | I'm planning to visit Jeju this spring. |
+| **Unfortunately**, ~ | Unfortunately, the cafe was full when we got there. |
+| **To make matters worse**, ~ | The bus was late, and to make matters worse, it started raining. |
+| **Luckily / It turned out that** ~ | Luckily, my friend knew a place nearby. / It turned out that the show was canceled. |
+| **I had no idea what to do** | At first, I had no idea what to do. |
+
+### 2.22 Listing (advantages / reasons)
+
+| Transition | Example |
+|---|---|
+| **First of all, ~ / Second, ~ / Lastly, ~** | First of all, it's close to my place. Second, the price is fair. |
+| **One advantage is ~; another is ~** | One advantage is convenience; another is the price. |
+
+### 2.23 Opinion + future (IHU15 / plans)
+
+| Transition | Example |
+|---|---|
+| **In my opinion, ~** | In my opinion, reading is the best habit you can build. |
+| **I tend to think ~** | I tend to think technology does more good than harm. |
+| **A lot of people say ~, but I ~** | A lot of people say gyms are boring, but I enjoy mine. |
+| **I'm planning to ~ / I'm going to ~** | I'm planning to visit Jeju this spring. |
 
 ## 3. Tense (시제) — priority 2
 
@@ -898,6 +966,7 @@ Praise adjectives: **fantastic / amazing / spectacular / wonderful / awesome**.
 - One anchor tense per story; `used to` for every past-vs-now contrast.
 - `a` on first mention, `the` after; -s after **many / most / several / a few / a couple of**.
 - Quote someone in every PE ("I was like, ~") — and go with family/friends in the story.
+- Rotate closers — never the same line twice in a set (the bank in 2.6).
 - Refer back inside combos ("Like I said earlier, ~").
 - If a run wedges: finish the sentence, put the next one back on track. Recovery, not perfection.
 

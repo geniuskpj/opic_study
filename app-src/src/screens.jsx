@@ -730,8 +730,20 @@ let DOCS = null;
 function Docs() {
   const [docs, setDocs] = useState(DOCS);
   useEffect(() => {
-    if (DOCS) return;
-    fetch('data/docs.json').then((r) => r.json()).then((d) => { DOCS = d; setDocs(d); }).catch(() => setDocs([]));
+    // ALWAYS re-fetch on mount (cache-busted): a long-lived tab kept a stale module list after a
+    // redeploy, and one failed fetch used to permanently empty the list (no retry, DOCS stayed null).
+    let dead = false;
+    (async () => {
+      for (let attempt = 0; attempt < 3 && !dead; attempt++) {
+        try {
+          const d = await (await fetch('data/docs.json?v=' + Date.now(), { cache: 'reload' })).json();
+          if (!dead) { DOCS = d; setDocs(d); }
+          return;
+        } catch { await new Promise((r) => setTimeout(r, 500)); } // retry: transient SW/network hiccup
+      }
+      if (!dead) setDocs([]);
+    })();
+    return () => { dead = true; };
   }, []);
   if (!docs) return h('p', { class: 'dim mt4' }, '불러오는 중…');
   return h('div', { class: 'list mt4' }, docs.map((d) => h('button', {
